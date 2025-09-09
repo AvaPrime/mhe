@@ -1,0 +1,285 @@
+{
+  "errorHandling": {
+    "timeouts": {
+      "commandExecution": {
+        "default": 30000,
+        "description": "Default timeout for command execution in milliseconds",
+        "min": 1000,
+        "max": 300000,
+        "configurable": true
+      },
+      "processStartup": {
+        "default": 10000,
+        "description": "Timeout for process startup in milliseconds",
+        "min": 500,
+        "max": 60000,
+        "configurable": true
+      },
+      "healthCheck": {
+        "default": 5000,
+        "description": "Health check timeout in milliseconds",
+        "min": 1000,
+        "max": 30000,
+        "configurable": true
+      },
+      "gracefulShutdown": {
+        "default": 15000,
+        "description": "Graceful shutdown timeout in milliseconds",
+        "min": 5000,
+        "max": 60000,
+        "configurable": true
+      },
+      "networkRequest": {
+        "default": 8000,
+        "description": "Network request timeout in milliseconds",
+        "min": 1000,
+        "max": 120000,
+        "configurable": true
+      }
+    },
+    "retryMechanisms": {
+      "commandExecution": {
+        "enabled": true,
+        "maxAttempts": 3,
+        "backoffStrategy": "exponential",
+        "initialDelay": 1000,
+        "maxDelay": 10000,
+        "jitter": true,
+        "retryableErrors": [
+          "ECONNRESET",
+          "ETIMEDOUT",
+          "ENOTFOUND",
+          "TEMPORARY_FAILURE"
+        ]
+      },
+      "processStartup": {
+        "enabled": true,
+        "maxAttempts": 2,
+        "backoffStrategy": "linear",
+        "initialDelay": 2000,
+        "maxDelay": 5000,
+        "jitter": false,
+        "retryableErrors": [
+          "EADDRINUSE",
+          "EACCES",
+          "TEMPORARY_FAILURE"
+        ]
+      },
+      "healthCheck": {
+        "enabled": true,
+        "maxAttempts": 5,
+        "backoffStrategy": "constant",
+        "initialDelay": 1000,
+        "maxDelay": 1000,
+        "jitter": false,
+        "retryableErrors": [
+          "ECONNREFUSED",
+          "ETIMEDOUT",
+          "SERVICE_UNAVAILABLE"
+        ]
+      },
+      "networkRequest": {
+        "enabled": true,
+        "maxAttempts": 3,
+        "backoffStrategy": "exponential",
+        "initialDelay": 500,
+        "maxDelay": 8000,
+        "jitter": true,
+        "retryableErrors": [
+          "ECONNRESET",
+          "ETIMEDOUT",
+          "ENOTFOUND",
+          "502",
+          "503",
+          "504"
+        ]
+      }
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "recoveryTimeout": 60000,
+      "monitoringWindow": 120000,
+      "halfOpenMaxCalls": 3
+    },
+    "preflightChecks": {
+      "enabled": true,
+      "checks": [
+        {
+          "name": "nodeVersion",
+          "description": "Verify Node.js version compatibility",
+          "required": true,
+          "timeout": 2000
+        },
+        {
+          "name": "memoryAvailable",
+          "description": "Check available system memory",
+          "required": true,
+          "timeout": 1000,
+          "minMemoryMB": 512
+        },
+        {
+          "name": "diskSpace",
+          "description": "Verify sufficient disk space",
+          "required": true,
+          "timeout": 2000,
+          "minSpaceMB": 100
+        },
+        {
+          "name": "permissions",
+          "description": "Check file system permissions",
+          "required": true,
+          "timeout": 1000
+        },
+        {
+          "name": "dependencies",
+          "description": "Validate required dependencies",
+          "required": true,
+          "timeout": 5000
+        }
+      ]
+    },
+    "errorCategories": {
+      "CRITICAL": {
+        "description": "Critical errors that require immediate attention",
+        "exitCode": 1,
+        "shouldRetry": false,
+        "alerting": true,
+        "examples": [
+          "SECURITY_VIOLATION",
+          "CORRUPTION_DETECTED",
+          "AUTHENTICATION_FAILURE"
+        ]
+      },
+      "RECOVERABLE": {
+        "description": "Errors that can be recovered through retry mechanisms",
+        "exitCode": 2,
+        "shouldRetry": true,
+        "alerting": false,
+        "examples": [
+          "NETWORK_TIMEOUT",
+          "TEMPORARY_RESOURCE_UNAVAILABLE",
+          "RATE_LIMIT_EXCEEDED"
+        ]
+      },
+      "CONFIGURATION": {
+        "description": "Configuration-related errors",
+        "exitCode": 3,
+        "shouldRetry": false,
+        "alerting": true,
+        "examples": [
+          "INVALID_CONFIG",
+          "MISSING_REQUIRED_SETTING",
+          "VERSION_MISMATCH"
+        ]
+      },
+      "RESOURCE": {
+        "description": "Resource-related errors",
+        "exitCode": 4,
+        "shouldRetry": true,
+        "alerting": true,
+        "examples": [
+          "OUT_OF_MEMORY",
+          "DISK_FULL",
+          "FILE_NOT_FOUND"
+        ]
+      }
+    },
+    "logging": {
+      "errorLogging": {
+        "enabled": true,
+        "level": "error",
+        "includeStackTrace": true,
+        "includeContext": true,
+        "maxLogSize": "10MB",
+        "rotationPolicy": "daily"
+      },
+      "retryLogging": {
+        "enabled": true,
+        "level": "warn",
+        "logAttempts": true,
+        "logBackoff": false
+      },
+      "performanceLogging": {
+        "enabled": true,
+        "level": "info",
+        "logSlowOperations": true,
+        "slowOperationThreshold": 5000
+      }
+    },
+    "monitoring": {
+      "metrics": {
+        "enabled": true,
+        "collectErrorRates": true,
+        "collectRetryRates": true,
+        "collectLatency": true,
+        "collectResourceUsage": true
+      },
+      "healthEndpoint": {
+        "enabled": true,
+        "path": "/health",
+        "includeDetailedStatus": false,
+        "timeout": 3000
+      },
+      "alerting": {
+        "enabled": false,
+        "webhookUrl": null,
+        "errorThreshold": 10,
+        "timeWindow": 300000
+      }
+    },
+    "recovery": {
+      "autoRestart": {
+        "enabled": true,
+        "maxRestarts": 3,
+        "restartWindow": 600000,
+        "backoffMultiplier": 2
+      },
+      "gracefulDegradation": {
+        "enabled": true,
+        "fallbackMode": "safe",
+        "disableNonEssentialFeatures": true
+      },
+      "dataRecovery": {
+        "enabled": true,
+        "backupInterval": 300000,
+        "maxBackups": 5,
+        "compressionEnabled": true
+      }
+    }
+  },
+  "environment": {
+    "development": {
+      "timeouts": {
+        "commandExecution": 60000,
+        "healthCheck": 10000
+      },
+      "retryMechanisms": {
+        "commandExecution": {
+          "maxAttempts": 1
+        }
+      },
+      "logging": {
+        "errorLogging": {
+          "level": "debug"
+        }
+      }
+    },
+    "production": {
+      "timeouts": {
+        "commandExecution": 30000,
+        "healthCheck": 5000
+      },
+      "retryMechanisms": {
+        "commandExecution": {
+          "maxAttempts": 3
+        }
+      },
+      "monitoring": {
+        "alerting": {
+          "enabled": true
+        }
+      }
+    }
+  }
+}

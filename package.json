@@ -1,0 +1,78 @@
+{
+  "name": "mhe-unification-pack",
+  "version": "2.0.0",
+  "description": "SafeExec ↔ Desktop Commander Unification Pack v2 - Standardized configuration, monitoring, and testing",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "version:sync": "node scripts/version-sync.mjs",
+    "version:check": "node scripts/version-sync.mjs --check",
+    "env:validate": "node ops/env-validate.mjs",
+    "env:check": "node ops/env-validate.mjs --verbose",
+    "policy:validate": "node policy-lock.mjs validate",
+    "policy:update": "node policy-lock.mjs update",
+    "policy:status": "node policy-lock.mjs status",
+    "policy:strict": "POLICY_STRICT_MODE=true node policy-lock.mjs validate",
+    "monitor:start": "node ops/monitor.mjs",
+    "monitor:logs": "node ops/monitor.mjs --tail-only",
+    "test:integration": "node test/integration.spec.mjs",
+    "test:roles": "node test/roles-matrix.spec.mjs",
+    "test:all": "npm run test:integration && npm run test:roles",
+    "test:watch": "nodemon --watch test --watch mcp --exec \"npm run test:all\"",
+    "safeexec:start": "cd mcp/safe-exec && node server.mjs",
+    "safeexec:dev": "cd mcp/safe-exec && nodemon server.mjs",
+    "dc:validate": "node scripts/dc-input-validate.mjs",
+    "precommit": "npm run version:sync && npm run env:validate && npm run policy:validate",
+    "ci:validate": "npm run version:check && npm run env:check && npm run policy:strict && npm run test:all",
+    "setup": "npm run version:sync && npm run env:validate && npm run policy:update",
+    "health": "npm run version:check && npm run env:check && npm run policy:status"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0",
+    "chokidar": "^3.5.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "safeexec",
+    "desktop-commander",
+    "mcp",
+    "security",
+    "policy",
+    "monitoring",
+    "validation"
+  ],
+  "author": "MHE Unification Pack",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "file://./"
+  },
+  "config": {
+    "safeexec": {
+      "defaultRole": "builder",
+      "policyPath": "./mcp/safe-exec/policy.json",
+      "logLevel": "info"
+    },
+    "monitoring": {
+      "logRetention": "7d",
+      "alertThreshold": "error"
+    },
+    "validation": {
+      "strictMode": false,
+      "autoFix": true
+    }
+  },
+  "files": [
+    "scripts/",
+    "ops/",
+    "test/",
+    "mcp/",
+    "policy-lock.mjs",
+    ".nvmrc",
+    ".tool-versions"
+  ]
+}

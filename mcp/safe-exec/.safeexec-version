@@ -1,0 +1,68 @@
+# SafeExec Version Configuration
+# This file pins the SafeExec version to ensure consistency across deployments
+# Similar to Desktop Commander's version management approach
+
+# Core SafeExec Version
+SAFEEXEC_VERSION=0.5.0
+
+# Node.js Runtime Version (LTS recommended)
+NODE_VERSION=18.19.0
+
+# Docker Image Version (if using containerized deployment)
+DOCKER_IMAGE_VERSION=0.5.0
+
+# MCP Protocol Version
+MCP_PROTOCOL_VERSION=2024-11-05
+
+# Dependencies Version Constraints
+# These should match the versions in package.json
+MCP_SDK_VERSION=^0.5.0
+ZOD_VERSION=^3.23.8
+WINSTON_VERSION=^3.11.0
+
+# Security and Compliance
+# Last security audit date
+SECURITY_AUDIT_DATE=2024-01-15
+
+# Configuration Schema Version
+CONFIG_SCHEMA_VERSION=1.0
+
+# Build Information
+BUILD_TARGET=production
+MIN_MEMORY_MB=512
+MAX_MEMORY_MB=2048
+
+# Compatibility Matrix
+# Minimum supported versions for integration
+MIN_DESKTOP_COMMANDER_VERSION=0.5.0
+MIN_TRAE_VERSION=1.0.0
+
+# Feature Flags
+ENABLE_DOCKER_SUPPORT=true
+ENABLE_HEALTH_CHECKS=true
+ENABLE_METRICS_COLLECTION=true
+ENABLE_LOG_ROTATION=true
+
+# Update Policy
+# AUTO_UPDATE: none, patch, minor, major
+AUTO_UPDATE_POLICY=patch
+UPDATE_CHECK_INTERVAL_HOURS=24
+
+# Rollback Configuration
+MAX_ROLLBACK_VERSIONS=3
+ROLLBACK_TIMEOUT_SECONDS=300
+
+# Environment Specific Overrides
+# These can be overridden in deployment-specific configs
+DEV_MODE=false
+DEBUG_LEVEL=info
+LOG_RETENTION_DAYS=30
+
+# Integration Endpoints
+HEALTH_CHECK_ENDPOINT=/health
+METRICS_ENDPOINT=/metrics
+VERSION_ENDPOINT=/version
+
+# Last Updated
+LAST_UPDATED=2024-01-15T10:30:00Z
+UPDATED_BY=system-admin

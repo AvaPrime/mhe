@@ -100,17 +100,76 @@ node mcp/safe-exec/policy-linter.mjs --analyze --policy mcp/safe-exec/policy.jso
 
 Open a PR; CI will run schema checks, tests, and post a diff/risk comment.
 
-Troubleshooting
+Error Handling & Configuration
 
-Policy invalid: CI/Server prints Ajv errors. Fix to schema, commit.
+SafeExec++ includes enhanced error handling with configurable timeouts and retry mechanisms:
 
-Denied flag: Remove or change args; if required, propose a minimal policy change.
+### Configuration Files
+- `config/error-handling.json`: Error handling configuration
+- `lib/error-handler.js`: Error handling utilities
 
-Fence violations: Ensure cwd stays under SAFEEXEC_WORKDIR.
+### Key Features
+- **Configurable Timeouts**: Environment-specific timeout settings
+- **Retry Mechanisms**: Exponential backoff with jitter
+- **Circuit Breaker**: Prevents cascading failures
+- **Preflight Checks**: Validates environment before execution
+- **Health Monitoring**: Tracks system health and performance
 
-Timeouts: Bump SAFEEXEC_TIMEOUT_MS (keep ≤ 10m for non-admin roles).
+### Environment Variables
+```bash
+# Error handling configuration
+SAFEEXEC_ERROR_CONFIG="./config/error-handling.json"
+SAFEEXEC_ENVIRONMENT="development"  # or "production"
+SAFEEXEC_CIRCUIT_BREAKER_ENABLED="true"
+```
 
-Security defaults (opinionated)
+## Troubleshooting
+
+### Common Issues
+
+**Policy invalid**: CI/Server prints Ajv errors. Fix to schema, commit.
+
+**Denied flag**: Remove or change args; if required, propose a minimal policy change.
+
+**Fence violations**: Ensure cwd stays under SAFEEXEC_WORKDIR.
+
+**Timeouts**: 
+- Check `config/error-handling.json` for timeout settings
+- Adjust environment-specific timeouts (development vs production)
+- Use circuit breaker settings to prevent cascading failures
+
+**Version Conflicts**:
+- Run `node scripts/version-manager.js --validate` to check compatibility
+- Use `node scripts/version-manager.js --update` to sync versions
+- Check `.safeexec-version` for current configuration
+
+**Error Handling**:
+- Review error logs in the configured log directory
+- Check circuit breaker status if commands are being rejected
+- Verify preflight checks are passing
+- Monitor retry attempts and backoff patterns
+
+Monitoring Integration
+
+SafeExec++ integrates with the unified monitoring system:
+- Logs are forwarded to the central monitoring dashboard
+- Metrics are collected for performance analysis
+- Alerts are configured for critical failures
+- Health checks are performed regularly
+
+### Monitoring Commands
+```bash
+# Start unified monitoring
+node ../monitoring/unified-monitor.js --start
+
+# Check SafeExec health
+node ../monitoring/unified-monitor.js --health safeexec
+
+# View recent logs
+node ../monitoring/unified-monitor.js --logs safeexec --tail 100
+```
+
+## Security defaults (opinionated)
 
 denyFlags: --unsafe-perm, --allow-root, --privileged, -rf, -fr, --no-sandbox, --disable-sandbox
 

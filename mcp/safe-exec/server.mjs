@@ -5,20 +5,42 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 
+// Enhanced error handling imports
+let errorHandler;
+try {
+  const { ErrorHandler } = await import("../lib/error-handler.js");
+  errorHandler = new ErrorHandler();
+} catch {
+  // Fallback if error handler not available
+  errorHandler = { 
+    shouldRetry: () => false, 
+    recordFailure: () => {}, 
+    recordSuccess: () => {},
+    isCircuitOpen: () => false
+  };
+}
+
 // ---------- Configuration ----------
 const ROLE = process.env.SAFEEXEC_ROLE || "builder";
 const WORKDIR_ENV = process.env.SAFEEXEC_WORKDIR || process.cwd();
 const MAX_MS = Math.max(1000, parseInt(process.env.SAFEEXEC_TIMEOUT_MS || "600000", 10));
 const LOG_PATH = process.env.SAFEEXEC_LOG || path.join(process.cwd(), "safeexec.log.jsonl");
 const POLICY_PATH = process.env.SAFEEXEC_POLICY || path.join(process.cwd(), "mcp", "safe-exec", "policy.json");
+const MAX_RETRIES = parseInt(process.env.SAFEEXEC_MAX_RETRIES || "3", 10);
+const RETRY_DELAY_MS = parseInt(process.env.SAFEEXEC_RETRY_DELAY_MS || "1000", 10);
 
 // In-memory plan store (ephemeral per process)
 const plans = new Map(); // planId -> { cmd, args, cwd, env, role, expiresAt }
 
 // ---------- Utilities ----------
 function jlog(evt) {
-  try { fs.appendFileSync(LOG_PATH, JSON.stringify({ ts: new Date().toISOString(), ...evt }) + "\n"); }
-  catch (_) {}
+  try { 
+    const logEntry = { ts: new Date().toISOString(), pid: process.pid, ...evt };
+    fs.appendFileSync(LOG_PATH, JSON.stringify(logEntry) + "\n"); 
+  }
+  catch (err) {
+    console.error("[safeexec] Log write failed:", err.message);
+  }
 }
 
 function mustReadJSON(file) {
@@ -58,7 +80,44 @@ function cleanEnv(env) {
   return copy;
 }
 
+async function runChildWithRetry({ cmd, args = [], cwd, env, background = false, retries = MAX_RETRIES }) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await runChild({ cmd, args, cwd, env, background });
+      
+      // Success or non-retryable failure
+      if (result.code === 0 || !errorHandler.shouldRetry(result.code, attempt)) {
+        return result;
+      }
+      
+      // Retryable failure
+      if (attempt < retries) {
+        const delay = RETRY_DELAY_MS * Math.pow(2, attempt); // Exponential backoff
+        jlog({ kind: "retry", cmd, args, cwd, attempt: attempt + 1, delay_ms: delay, code: result.code });
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        jlog({ kind: "retry_exhausted", cmd, args, cwd, final_code: result.code });
+        return result;
+      }
+    } catch (err) {
+      if (attempt === retries) throw err;
+      const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+      jlog({ kind: "retry_error", cmd, args, cwd, attempt: attempt + 1, delay_ms: delay, error: err.message });
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 async function runChild({ cmd, args = [], cwd, env, background = false }) {
+  const cmdKey = `${cmd}:${cwd}`;
+  
+  // Circuit breaker check
+  if (errorHandler.isCircuitOpen(cmdKey)) {
+    const err = new Error(`Circuit breaker open for ${cmd} in ${cwd}`);
+    jlog({ kind: "circuit_open", cmd, args, cwd, error: err.message });
+    throw err;
+  }
+
   const child = spawn(cmd, args, {
     cwd,
     env,
@@ -74,15 +133,37 @@ async function runChild({ cmd, args = [], cwd, env, background = false }) {
     child.stderr?.on("data", d => { stderr += d.toString(); });
   }
 
-  const timer = setTimeout(() => { try { child.kill("SIGKILL"); } catch {} }, MAX_MS);
+  const timer = setTimeout(() => { 
+    try { 
+      child.kill("SIGKILL"); 
+      jlog({ kind: "timeout", cmd, args, cwd, timeout_ms: MAX_MS });
+    } catch {} 
+  }, MAX_MS);
 
   return new Promise(resolve => {
     child.on("close", (code, signal) => {
       clearTimeout(timer);
       const dur = Date.now() - started;
+      const result = { code, signal, duration_ms: dur, stdout: background ? "" : stdout, stderr: background ? "" : stderr };
+      
+      // Record success/failure for circuit breaker
+      if (code === 0) {
+        errorHandler.recordSuccess(cmdKey);
+      } else {
+        errorHandler.recordFailure(cmdKey);
+      }
+      
       jlog({ kind: "exit", cmd, args, cwd, code, signal, dur, bytesOut: stdout.length, bytesErr: stderr.length });
-      resolve({ code, signal, duration_ms: dur, stdout: background ? "" : stdout, stderr: background ? "" : stderr });
+      resolve(result);
     });
+    
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      errorHandler.recordFailure(cmdKey);
+      jlog({ kind: "spawn_error", cmd, args, cwd, error: err.message });
+      resolve({ code: -1, signal: null, duration_ms: Date.now() - started, stdout: "", stderr: err.message });
+    });
+    
     if (background) {
       jlog({ kind: "background", cmd, args, cwd });
       resolve({ code: 0, signal: null, duration_ms: 0, stdout: "", stderr: "" });
@@ -253,7 +334,7 @@ server.setRequestHandler("tools/call", async (req) => {
 
     const env = cleanEnv(plan.env);
     jlog({ kind: "apply", plan_id, role: plan.role, cmd: plan.cmd, args: plan.args, cwd: plan.cwd });
-    const result = await runChild({
+    const result = await runChildWithRetry({
       cmd: plan.cmd, args: plan.args, cwd: plan.cwd, env, background: plan.background
     });
     plans.delete(plan_id);
@@ -265,7 +346,7 @@ server.setRequestHandler("tools/call", async (req) => {
     const cwd = a.cwd || WORKDIR_ENV; const env = cleanEnv(a.env || {});
     const role = a.role || ROLE;
     gate({ cmd, args, cwd, role, policy });
-    const result = await runChild({ cmd, args, cwd, env, background: false });
+    const result = await runChildWithRetry({ cmd, args, cwd, env, background: false });
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   }
 
@@ -274,7 +355,7 @@ server.setRequestHandler("tools/call", async (req) => {
     const cwd = a.cwd || WORKDIR_ENV; const env = cleanEnv(a.env || {});
     const role = a.role || ROLE;
     gate({ cmd, args, cwd, role, policy });
-    const result = await runChild({ cmd, args, cwd, env, background: true });
+    const result = await runChildWithRetry({ cmd, args, cwd, env, background: true });
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   }
 
