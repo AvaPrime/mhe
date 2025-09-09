@@ -1,4 +1,5 @@
-"""Claude Parser - Optimized Implementation Module
+"""
+Claude Parser - Optimized Implementation Module
 
 A production-ready parser for Claude conversation exports with comprehensive
 error handling, optimized regex patterns, type safety, and validation.
@@ -6,6 +7,7 @@ error handling, optimized regex patterns, type safety, and validation.
 Author: Memory Harvester Engine Team
 Version: 2.0.0
 Compatibility: Claude API v1.x
+
 """
 
 import asyncio

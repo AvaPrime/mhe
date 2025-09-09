@@ -115,19 +115,26 @@ def sample_export():
 @pytest.fixture
 def temp_json_file(sample_export):
     """Create a temporary JSON file with sample export data."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-        json.dump(sample_export, f)
-        f.flush()  # Ensure data is written to disk
-        temp_path = Path(f.name)
+    import tempfile
+    import os
     
-    yield temp_path
+    # Create temp file
+    fd, temp_path_str = tempfile.mkstemp(suffix='.json', text=True)
+    temp_path = Path(temp_path_str)
     
-    # Cleanup
     try:
-        if temp_path.exists():
-            temp_path.unlink()
-    except Exception:
-        pass  # Ignore cleanup errors
+        # Write data to file
+        with os.fdopen(fd, 'w') as f:
+            json.dump(sample_export, f, indent=2)
+        
+        yield temp_path
+    finally:
+        # Cleanup
+        try:
+            if temp_path.exists():
+                temp_path.unlink()
+        except Exception:
+            pass  # Ignore cleanup errors
 
 
 @pytest.fixture
