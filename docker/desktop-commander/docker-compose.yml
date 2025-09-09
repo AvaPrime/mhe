@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  desktop-commander:
+    build: .
+    # Attach STDIN/STDOUT for MCP stdio mode
+    stdin_open: true
+    tty: true
+    # Sandbox: only mount the workspace, read-write
+    volumes:
+      - ${WORKSPACE:?set WORKSPACE env var}:/workspace
+      - dc_npm_cache:/home/dev/.npm
+    working_dir: /workspace
+    environment:
+      # Restrict file tools to /workspace (server honors this)
+      DC_ALLOWED_DIRS: /workspace
+    # Resource caps (tune as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1g
+        reservations:
+          cpus: '0.25'
+          memory: 256m
+
+volumes:
+  dc_npm_cache:

@@ -1,0 +1,22 @@
+{
+  "mcpServers": [
+    {
+      "name": "desktop-commander",
+      "command": ["npx", "-y", "@wonderwhy-er/desktop-commander@latest"],
+      "env": {
+        "DC_ALLOWED_DIRS": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "desktop-commander-docker",
+      "command": [
+        "docker", "compose",
+        "-f", "docker/desktop-commander/docker-compose.yml",
+        "run", "--rm", "desktop-commander"
+      ],
+      "env": {
+        "WORKSPACE": "${workspaceFolder}"
+      }
+    }
+  ]
+}
