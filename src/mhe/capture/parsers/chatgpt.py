@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from mhe.memory.models import Assistant, Thread, Message
 from mhe.extract.detectors import extract_artifacts_from_markdown
-from mhe.extract.cards import mint_card_for_message
 from mhe.common.ids import stable_sha256
 
 def _safe_parts(message: dict) -> List[str]:
@@ -125,12 +124,6 @@ async def ingest_chatgpt_export(session: AsyncSession, data: Dict[str, Any]) -> 
             for a in artifacts:
                 a.message_id = m.id
                 session.add(a)
-            # Flush again so artifact IDs are available for provenance
-            await session.flush()
-            # Mint a MemoryCard for this message (heuristic: only when artifacts exist)
-            if artifacts:
-                card = await mint_card_for_message(session, m, artifacts)
-                session.add(card)
             messages += 1
 
     await session.commit()

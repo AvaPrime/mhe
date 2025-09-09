@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from mhe.common.config import settings
-from mhe.access.routers import ingest, artifacts, cards
+from mhe.access.routers import ingest
 
 app = FastAPI(title="Memory Harvester Engine", version="0.1.0")
 
@@ -35,6 +35,3 @@ if __name__ == "__main__":
         from mhe.memory.db import init_db
         asyncio.run(init_db())
         print("DB initialized.")
-
-app.include_router(artifacts.router, prefix="/artifacts", tags=["artifacts"])
-app.include_router(cards.router, prefix="/memory-cards", tags=["memory-cards"])
