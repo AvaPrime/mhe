@@ -1,0 +1,247 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/mcp-safe-exec-policy.schema.json",
+  "title": "MCP Safe-Exec Policy Schema",
+  "description": "JSON Schema for validating MCP Safe-Exec security policies",
+  "type": "object",
+  "required": ["workspaceFence", "roles"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "JSON Schema reference for this policy document"
+    },
+    "workspaceFence": {
+      "type": "string",
+      "pattern": "^\\{[A-Z_]+\\}$",
+      "description": "Workspace boundary marker (e.g., {WORKSPACE})",
+      "examples": ["{WORKSPACE}", "{PROJECT_ROOT}", "{SAFE_ZONE}"]
+    },
+    "denyFlags": {
+      "type": "array",
+      "description": "Global list of command flags that are always denied",
+      "items": {
+        "type": "string",
+        "pattern": "^(--?[a-zA-Z0-9-_]+|[a-zA-Z0-9-_]+)$",
+        "description": "Command flag or option to deny globally"
+      },
+      "uniqueItems": true,
+      "examples": [[
+        "--unsafe-perm",
+        "--allow-root",
+        "--privileged",
+        "-rf",
+        "--no-sandbox"
+      ]]
+    },
+    "roles": {
+      "type": "object",
+      "description": "Role-based access control definitions",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_-]*$": {
+          "$ref": "#/definitions/role"
+        }
+      },
+      "additionalProperties": false
+    },
+    "perBinary": {
+      "type": "object",
+      "description": "Binary-specific security configurations",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_.-]*$": {
+          "$ref": "#/definitions/binaryConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "globalSettings": {
+      "type": "object",
+      "description": "Global policy settings and defaults",
+      "properties": {
+        "defaultRole": {
+          "type": "string",
+          "description": "Default role when none specified"
+        },
+        "maxExecutionTime": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "description": "Maximum execution time in seconds"
+        },
+        "requireApproval": {
+          "type": "boolean",
+          "description": "Whether commands require human approval by default"
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "description": "Logging level for policy enforcement"
+        }
+      },
+      "additionalProperties": false
+    },
+    "auditSettings": {
+      "type": "object",
+      "description": "Audit and compliance settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable audit logging"
+        },
+        "logPath": {
+          "type": "string",
+          "description": "Path to audit log file"
+        },
+        "retentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 365,
+          "description": "Number of days to retain audit logs"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "role": {
+      "type": "object",
+      "description": "Role definition with permissions and restrictions",
+      "required": ["allowedBinaries"],
+      "properties": {
+        "allowedBinaries": {
+          "type": "array",
+          "description": "List of binaries this role can execute",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_.-]*$",
+            "description": "Binary name or executable"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "deniedBinaries": {
+          "type": "array",
+          "description": "List of binaries explicitly denied for this role",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_.-]*$"
+          },
+          "uniqueItems": true
+        },
+        "maxExecutionTime": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "description": "Maximum execution time for this role in seconds"
+        },
+        "requireApproval": {
+          "type": "boolean",
+          "description": "Whether this role requires human approval"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this role"
+        },
+        "inherits": {
+          "type": "array",
+          "description": "Other roles this role inherits permissions from",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "binaryConfig": {
+      "type": "object",
+      "description": "Binary-specific configuration and restrictions",
+      "properties": {
+        "denyFlags": {
+          "type": "array",
+          "description": "Flags denied for this specific binary",
+          "items": {
+            "type": "string",
+            "pattern": "^(--?[a-zA-Z0-9-_]+|[a-zA-Z0-9-_]+)$"
+          },
+          "uniqueItems": true
+        },
+        "allowFlags": {
+          "type": "array",
+          "description": "Explicitly allowed flags (overrides global deny)",
+          "items": {
+            "type": "string",
+            "pattern": "^(--?[a-zA-Z0-9-_]+|[a-zA-Z0-9-_]+)$"
+          },
+          "uniqueItems": true
+        },
+        "requireApproval": {
+          "type": "boolean",
+          "description": "Whether this binary requires human approval"
+        },
+        "maxExecutionTime": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "description": "Maximum execution time for this binary in seconds"
+        },
+        "workingDirectory": {
+          "type": "string",
+          "description": "Restricted working directory for this binary"
+        },
+        "environmentVariables": {
+          "type": "object",
+          "description": "Environment variables to set/restrict for this binary",
+          "patternProperties": {
+            "^[A-Z_][A-Z0-9_]*$": {
+              "type": "string"
+            }
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Human-readable notes about this binary's restrictions"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Security severity level for violations"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://example.com/mcp-safe-exec-policy.schema.json",
+      "workspaceFence": "{WORKSPACE}",
+      "denyFlags": [
+        "--unsafe-perm",
+        "--allow-root",
+        "--privileged",
+        "-rf",
+        "--no-sandbox"
+      ],
+      "roles": {
+        "builder": {
+          "allowedBinaries": ["node", "npm", "python", "git"],
+          "description": "Role for building and compiling code"
+        },
+        "reviewer": {
+          "allowedBinaries": ["git", "rg"],
+          "description": "Role for code review and analysis"
+        }
+      },
+      "perBinary": {
+        "git": {
+          "denyFlags": ["push", "reset", "--force"],
+          "requireApproval": true,
+          "notes": "Require approval for destructive operations"
+        }
+      }
+    }
+  ]
+}

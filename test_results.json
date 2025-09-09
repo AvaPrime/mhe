@@ -1,0 +1,74 @@
+{
+  "execution_time": 150.192872,
+  "total_tests": 4,
+  "passed_tests": 2,
+  "failed_tests": 2,
+  "success_rate": 50.0,
+  "security_issues": 1,
+  "performance_metrics": [
+    {
+      "cpu_usage": 3.299999999999997,
+      "memory_usage": 0.09999999999999964,
+      "response_time": 2.0023458003997803,
+      "throughput": 0.49941423694166315,
+      "concurrent_connections": 1
+    }
+  ],
+  "test_results": [
+    {
+      "test_id": "TC-ENV-001",
+      "name": "Environment Prerequisites",
+      "status": "PASS",
+      "duration": 2.4295814037323,
+      "details": "Node.js: v22.16.0, npm: 10.9.2, Docker: Docker version 28.3.2, build 578ccf6, Compose: Docker Compose version v2.39.1-desktop.1",
+      "metrics": {
+        "duration": 2.4295814037323
+      },
+      "timestamp": "2025-09-09T20:25:59.626059"
+    },
+    {
+      "test_id": "TC-CONFIG-001",
+      "name": "Configuration Validation",
+      "status": "FAIL",
+      "duration": 0.010388851165771484,
+      "details": "Missing NPX server configuration",
+      "metrics": {
+        "duration": 0.010388851165771484
+      },
+      "timestamp": "2025-09-09T20:25:59.636519"
+    },
+    {
+      "test_id": "TC-NPX-001",
+      "name": "NPX Deployment",
+      "status": "FAIL",
+      "duration": 60.06716823577881,
+      "details": "NPX deployment failed: Command timed out",
+      "metrics": {
+        "duration": 60.06716823577881
+      },
+      "timestamp": "2025-09-09T20:26:59.703781"
+    },
+    {
+      "test_id": "TC-DOCKER-001",
+      "name": "Docker Deployment",
+      "status": "PASS",
+      "duration": 83.51139330863953,
+      "details": "Docker deployment successful. Container built and started successfully.",
+      "metrics": {
+        "duration": 83.51139330863953,
+        "build_success": 1.0
+      },
+      "timestamp": "2025-09-09T20:28:23.215260"
+    }
+  ],
+  "security_results": [
+    {
+      "test_id": "TC-SEC-001",
+      "vulnerability_type": "Docker Security Configuration",
+      "severity": "MEDIUM",
+      "status": "FAIL",
+      "description": "Missing security configurations: non-root user, memory limits, read-only filesystem",
+      "remediation": "Implement missing Docker security configurations"
+    }
+  ]
+}

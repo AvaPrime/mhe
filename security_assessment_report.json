@@ -1,0 +1,399 @@
+{
+  "assessment_metadata": {
+    "execution_time": 63.144503,
+    "timestamp": "2025-09-09T20:30:02.044786",
+    "total_tests": 5,
+    "passed_tests": 0,
+    "failed_tests": 5
+  },
+  "security_metrics": {
+    "overall_security_score": 23,
+    "total_vulnerabilities": 7,
+    "critical_vulnerabilities": 0,
+    "high_vulnerabilities": 3,
+    "medium_vulnerabilities": 4,
+    "low_vulnerabilities": 0,
+    "average_risk_score": 0.3045714285714286
+  },
+  "compliance_status": {
+    "OWASP_A01": "PARTIAL_COMPLIANCE",
+    "OWASP_A03": "NON_COMPLIANT",
+    "CWE_20": "NON_COMPLIANT",
+    "OWASP_A07": "NON_COMPLIANT",
+    "CWE_798": "NON_COMPLIANT",
+    "CIS_Docker": "NON_COMPLIANT",
+    "NIST_Container": "NON_COMPLIANT",
+    "CWE_732": "NON_COMPLIANT"
+  },
+  "test_results": [
+    {
+      "test_id": "ST-AUTH-001",
+      "test_name": "Authentication Security Assessment",
+      "status": "FAIL",
+      "execution_time": 0.010448932647705078,
+      "vulnerabilities": [],
+      "recommendations": [
+        "Fix test execution issues"
+      ],
+      "compliance_status": {
+        "OWASP_A01": "UNKNOWN"
+      }
+    },
+    {
+      "test_id": "ST-INPUT-001",
+      "test_name": "Input Validation Security Assessment",
+      "status": "FAIL",
+      "execution_time": 0.011006832122802734,
+      "vulnerabilities": [
+        {
+          "vuln_id": "INPUT-001-VALIDATION",
+          "title": "Insufficient Input Validation Guidelines",
+          "severity": "MEDIUM",
+          "category": "Input Validation",
+          "description": "Missing input validation guidelines: input validation, sanitization, parameter validation, injection prevention",
+          "impact": "Potential injection vulnerabilities",
+          "remediation": "Add comprehensive input validation guidelines to project rules",
+          "cve_references": [
+            "CWE-20",
+            "CWE-79",
+            "CWE-89"
+          ],
+          "affected_components": [
+            "project_rules.md"
+          ],
+          "test_evidence": "Missing keywords: ['input validation', 'sanitization', 'parameter validation', 'injection prevention']",
+          "risk_score": 0.20999999999999996
+        }
+      ],
+      "recommendations": [
+        "Enhance input validation guidelines"
+      ],
+      "compliance_status": {
+        "OWASP_A03": "FAIL",
+        "CWE_20": "FAIL"
+      }
+    },
+    {
+      "test_id": "ST-SECRETS-001",
+      "test_name": "Secrets Management Security Assessment",
+      "status": "FAIL",
+      "execution_time": 63.059720516204834,
+      "vulnerabilities": [
+        {
+          "vuln_id": "SECRETS-002-.env.example",
+          "title": "Environment File Found",
+          "severity": "MEDIUM",
+          "category": "Secrets Management",
+          "description": "Environment file .env.example may contain secrets",
+          "impact": "Potential credential exposure if committed to version control",
+          "remediation": "Ensure .env files are in .gitignore and use secure secret management",
+          "cve_references": [],
+          "affected_components": [
+            "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.env.example"
+          ],
+          "test_evidence": "Environment file found: /mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.env.example",
+          "risk_score": 0.15
+        }
+      ],
+      "recommendations": [
+        "Secure environment file: .env.example"
+      ],
+      "compliance_status": {
+        "OWASP_A07": "FAIL",
+        "CWE_798": "FAIL"
+      }
+    },
+    {
+      "test_id": "ST-CONTAINER-001",
+      "test_name": "Container Security Assessment",
+      "status": "FAIL",
+      "execution_time": 0.026594161987304688,
+      "vulnerabilities": [
+        {
+          "vuln_id": "CONTAINER-001-NO_NEW_PRIVILEGES",
+          "title": "Container Security Issue: No New Privileges",
+          "severity": "HIGH",
+          "category": "Container Security",
+          "description": "Container configuration has no new privileges security issue",
+          "impact": "Potential container escape or privilege escalation",
+          "remediation": "Fix no new privileges configuration in Docker Compose",
+          "cve_references": [],
+          "affected_components": [
+            "docker-compose.yml"
+          ],
+          "test_evidence": "Security check failed: no_new_privileges",
+          "risk_score": 0.5760000000000001
+        }
+      ],
+      "recommendations": [
+        "Fix container no new privileges issue"
+      ],
+      "compliance_status": {
+        "CIS_Docker": "FAIL",
+        "NIST_Container": "FAIL"
+      }
+    },
+    {
+      "test_id": "ST-PERMS-001",
+      "test_name": "File Permissions Security Assessment",
+      "status": "FAIL",
+      "execution_time": 0.034427642822265625,
+      "vulnerabilities": [
+        {
+          "vuln_id": "PERMS-001-mcp.json",
+          "title": "Overly Permissive File Permissions",
+          "severity": "MEDIUM",
+          "category": "File Permissions",
+          "description": "File mcp.json has permissions 777",
+          "impact": "Unauthorized file modification possible",
+          "remediation": "Set restrictive permissions (644) for mcp.json",
+          "cve_references": [
+            "CWE-732"
+          ],
+          "affected_components": [
+            "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.trae/mcp.json"
+          ],
+          "test_evidence": "File permissions: 777",
+          "risk_score": 0.15
+        },
+        {
+          "vuln_id": "PERMS-001-docker-compose.yml",
+          "title": "Overly Permissive File Permissions",
+          "severity": "MEDIUM",
+          "category": "File Permissions",
+          "description": "File docker-compose.yml has permissions 777",
+          "impact": "Unauthorized file modification possible",
+          "remediation": "Set restrictive permissions (644) for docker-compose.yml",
+          "cve_references": [
+            "CWE-732"
+          ],
+          "affected_components": [
+            "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/docker/desktop-commander/docker-compose.yml"
+          ],
+          "test_evidence": "File permissions: 777",
+          "risk_score": 0.15
+        },
+        {
+          "vuln_id": "PERMS-002-.trae",
+          "title": "World-Writable Directory",
+          "severity": "HIGH",
+          "category": "Directory Permissions",
+          "description": "Directory .trae is world-writable",
+          "impact": "Unauthorized file creation and modification",
+          "remediation": "Set restrictive permissions (755) for .trae",
+          "cve_references": [
+            "CWE-732"
+          ],
+          "affected_components": [
+            "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.trae"
+          ],
+          "test_evidence": "Directory permissions: 777",
+          "risk_score": 0.44799999999999995
+        },
+        {
+          "vuln_id": "PERMS-002-docker",
+          "title": "World-Writable Directory",
+          "severity": "HIGH",
+          "category": "Directory Permissions",
+          "description": "Directory docker is world-writable",
+          "impact": "Unauthorized file creation and modification",
+          "remediation": "Set restrictive permissions (755) for docker",
+          "cve_references": [
+            "CWE-732"
+          ],
+          "affected_components": [
+            "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/docker"
+          ],
+          "test_evidence": "Directory permissions: 777",
+          "risk_score": 0.44799999999999995
+        }
+      ],
+      "recommendations": [
+        "Fix permissions for mcp.json",
+        "Fix permissions for docker-compose.yml",
+        "Fix directory permissions for .trae",
+        "Fix directory permissions for docker"
+      ],
+      "compliance_status": {
+        "CWE_732": "FAIL"
+      }
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "vuln_id": "INPUT-001-VALIDATION",
+      "title": "Insufficient Input Validation Guidelines",
+      "severity": "MEDIUM",
+      "category": "Input Validation",
+      "description": "Missing input validation guidelines: input validation, sanitization, parameter validation, injection prevention",
+      "impact": "Potential injection vulnerabilities",
+      "remediation": "Add comprehensive input validation guidelines to project rules",
+      "cve_references": [
+        "CWE-20",
+        "CWE-79",
+        "CWE-89"
+      ],
+      "affected_components": [
+        "project_rules.md"
+      ],
+      "test_evidence": "Missing keywords: ['input validation', 'sanitization', 'parameter validation', 'injection prevention']",
+      "risk_score": 0.20999999999999996
+    },
+    {
+      "vuln_id": "SECRETS-002-.env.example",
+      "title": "Environment File Found",
+      "severity": "MEDIUM",
+      "category": "Secrets Management",
+      "description": "Environment file .env.example may contain secrets",
+      "impact": "Potential credential exposure if committed to version control",
+      "remediation": "Ensure .env files are in .gitignore and use secure secret management",
+      "cve_references": [],
+      "affected_components": [
+        "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.env.example"
+      ],
+      "test_evidence": "Environment file found: /mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.env.example",
+      "risk_score": 0.15
+    },
+    {
+      "vuln_id": "CONTAINER-001-NO_NEW_PRIVILEGES",
+      "title": "Container Security Issue: No New Privileges",
+      "severity": "HIGH",
+      "category": "Container Security",
+      "description": "Container configuration has no new privileges security issue",
+      "impact": "Potential container escape or privilege escalation",
+      "remediation": "Fix no new privileges configuration in Docker Compose",
+      "cve_references": [],
+      "affected_components": [
+        "docker-compose.yml"
+      ],
+      "test_evidence": "Security check failed: no_new_privileges",
+      "risk_score": 0.5760000000000001
+    },
+    {
+      "vuln_id": "PERMS-001-mcp.json",
+      "title": "Overly Permissive File Permissions",
+      "severity": "MEDIUM",
+      "category": "File Permissions",
+      "description": "File mcp.json has permissions 777",
+      "impact": "Unauthorized file modification possible",
+      "remediation": "Set restrictive permissions (644) for mcp.json",
+      "cve_references": [
+        "CWE-732"
+      ],
+      "affected_components": [
+        "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.trae/mcp.json"
+      ],
+      "test_evidence": "File permissions: 777",
+      "risk_score": 0.15
+    },
+    {
+      "vuln_id": "PERMS-001-docker-compose.yml",
+      "title": "Overly Permissive File Permissions",
+      "severity": "MEDIUM",
+      "category": "File Permissions",
+      "description": "File docker-compose.yml has permissions 777",
+      "impact": "Unauthorized file modification possible",
+      "remediation": "Set restrictive permissions (644) for docker-compose.yml",
+      "cve_references": [
+        "CWE-732"
+      ],
+      "affected_components": [
+        "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/docker/desktop-commander/docker-compose.yml"
+      ],
+      "test_evidence": "File permissions: 777",
+      "risk_score": 0.15
+    },
+    {
+      "vuln_id": "PERMS-002-.trae",
+      "title": "World-Writable Directory",
+      "severity": "HIGH",
+      "category": "Directory Permissions",
+      "description": "Directory .trae is world-writable",
+      "impact": "Unauthorized file creation and modification",
+      "remediation": "Set restrictive permissions (755) for .trae",
+      "cve_references": [
+        "CWE-732"
+      ],
+      "affected_components": [
+        "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.trae"
+      ],
+      "test_evidence": "Directory permissions: 777",
+      "risk_score": 0.44799999999999995
+    },
+    {
+      "vuln_id": "PERMS-002-docker",
+      "title": "World-Writable Directory",
+      "severity": "HIGH",
+      "category": "Directory Permissions",
+      "description": "Directory docker is world-writable",
+      "impact": "Unauthorized file creation and modification",
+      "remediation": "Set restrictive permissions (755) for docker",
+      "cve_references": [
+        "CWE-732"
+      ],
+      "affected_components": [
+        "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/docker"
+      ],
+      "test_evidence": "Directory permissions: 777",
+      "risk_score": 0.44799999999999995
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "vulnerability_id": "CONTAINER-001-NO_NEW_PRIVILEGES",
+      "title": "Container Security Issue: No New Privileges",
+      "recommendation": "Fix no new privileges configuration in Docker Compose",
+      "affected_components": "docker-compose.yml",
+      "risk_score": 0.5760000000000001
+    },
+    {
+      "priority": "HIGH",
+      "vulnerability_id": "PERMS-002-.trae",
+      "title": "World-Writable Directory",
+      "recommendation": "Set restrictive permissions (755) for .trae",
+      "affected_components": "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.trae",
+      "risk_score": 0.44799999999999995
+    },
+    {
+      "priority": "HIGH",
+      "vulnerability_id": "PERMS-002-docker",
+      "title": "World-Writable Directory",
+      "recommendation": "Set restrictive permissions (755) for docker",
+      "affected_components": "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/docker",
+      "risk_score": 0.44799999999999995
+    },
+    {
+      "priority": "MEDIUM",
+      "vulnerability_id": "INPUT-001-VALIDATION",
+      "title": "Insufficient Input Validation Guidelines",
+      "recommendation": "Add comprehensive input validation guidelines to project rules",
+      "affected_components": "project_rules.md",
+      "risk_score": 0.20999999999999996
+    },
+    {
+      "priority": "MEDIUM",
+      "vulnerability_id": "SECRETS-002-.env.example",
+      "title": "Environment File Found",
+      "recommendation": "Ensure .env files are in .gitignore and use secure secret management",
+      "affected_components": "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.env.example",
+      "risk_score": 0.15
+    },
+    {
+      "priority": "MEDIUM",
+      "vulnerability_id": "PERMS-001-mcp.json",
+      "title": "Overly Permissive File Permissions",
+      "recommendation": "Set restrictive permissions (644) for mcp.json",
+      "affected_components": "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/.trae/mcp.json",
+      "risk_score": 0.15
+    },
+    {
+      "priority": "MEDIUM",
+      "vulnerability_id": "PERMS-001-docker-compose.yml",
+      "title": "Overly Permissive File Permissions",
+      "recommendation": "Set restrictive permissions (644) for docker-compose.yml",
+      "affected_components": "/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/6a594e1993f77d7d4dc5844f9f415cbce4c733f7b3c687fedb657ae3ce147518/docker/desktop-commander/docker-compose.yml",
+      "risk_score": 0.15
+    }
+  ]
+}

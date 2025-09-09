@@ -1,0 +1,61 @@
+{
+  "name": "mcp-safe-exec-policy-linter",
+  "version": "1.0.0",
+  "description": "Policy validation and linting system for MCP Safe-Exec",
+  "type": "module",
+  "main": "policy-linter.mjs",
+  "scripts": {
+    "lint": "node policy-linter.mjs policy.json policy.schema.json",
+    "lint:markdown": "node policy-linter.mjs policy.json policy.schema.json --format=markdown",
+    "test": "node policy-validation-tests.mjs",
+    "check-pr": "node pr-policy-checker.mjs",
+    "validate": "node -e \"import('./policy-utils.mjs').then(m => m.PolicyManager.loadPolicy('policy.json')).then(r => console.log(r.valid ? 'Valid' : 'Invalid'))\"",
+    "generate-template": "node -e \"import('./policy-utils.mjs').then(m => console.log(JSON.stringify(m.PolicyTransformer.generateTemplate(), null, 2)))\"",
+    "analyze": "node -e \"import('./policy-utils.mjs').then(m => Promise.all([m.PolicyManager.loadPolicy('policy.json'), import('./policy-linter.mjs')]).then(([{policy}, {default: PolicyLinter}]) => { const analyzer = m.PolicyAnalyzer; console.log('Complexity:', analyzer.calculateComplexity(policy)); console.log('Security:', analyzer.analyzeSecurityPosture(policy)); console.log('Stats:', analyzer.generateStatistics(policy)); }))\""
+  },
+  "bin": {
+    "policy-lint": "./policy-linter.mjs",
+    "policy-check-pr": "./pr-policy-checker.mjs",
+    "policy-test": "./policy-validation-tests.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
+    "@octokit/rest": "^20.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "safe-exec",
+    "policy",
+    "linting",
+    "validation",
+    "security",
+    "pr-automation"
+  ],
+  "author": "MCP Safe-Exec Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/mcp-safe-exec.git",
+    "directory": "mcp/safe-exec"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/mcp-safe-exec/issues"
+  },
+  "homepage": "https://github.com/your-org/mcp-safe-exec#readme",
+  "files": [
+    "policy-linter.mjs",
+    "pr-policy-checker.mjs",
+    "policy-utils.mjs",
+    "policy-validation-tests.mjs",
+    "policy.schema.json",
+    "POLICY_LINTING_GUIDE.md",
+    "README.md"
+  ]
+}

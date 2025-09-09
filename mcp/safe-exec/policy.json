@@ -1,0 +1,51 @@
+{
+  "$schema": "https://example.com/mcp-safe-exec-policy.schema.json",
+  "workspaceFence": "{WORKSPACE}",
+
+  "denyFlags": [
+    "--unsafe-perm",
+    "--allow-root",
+    "--privileged",
+    "-rf",
+    "-fr",
+    "--no-sandbox",
+    "--disable-sandbox"
+  ],
+
+  "roles": {
+    "builder": {
+      "allowedBinaries": ["node", "npm", "pnpm", "yarn", "python", "uv", "pip", "rg", "git", "go", "bash", "sh"]
+    },
+    "validator": {
+      "allowedBinaries": ["node", "npm", "pnpm", "python", "uv", "pip", "rg", "git"]
+    },
+    "reviewer": {
+      "allowedBinaries": ["rg", "git"]
+    },
+    "admin": {
+      "allowedBinaries": ["node", "npm", "pnpm", "yarn", "python", "uv", "pip", "rg", "git", "go", "bash", "sh", "docker", "docker-compose"]
+    }
+  },
+
+  "perBinary": {
+    "git": {
+      "denyFlags": ["push", "reset", "clean", "filter-repo", "rebase", "--force", "--hard"],
+      "notes": "Require human approval before any remote mutation or destructive local ops."
+    },
+    "npm": {
+      "denyFlags": ["--unsafe-perm", "--force"]
+    },
+    "pnpm": {
+      "denyFlags": ["--unsafe-perm", "--force"]
+    },
+    "bash": {
+      "denyFlags": ["-c"]
+    },
+    "sh": {
+      "denyFlags": ["-c"]
+    },
+    "docker": {
+      "denyFlags": ["--privileged"]
+    }
+  }
+}
