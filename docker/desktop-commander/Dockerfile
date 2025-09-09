@@ -1,9 +1,35 @@
-FROM node:20-alpine
+FROM node:18-alpine
+
 # Create non-root user
-RUN addgroup -S dev && adduser -S dev -G dev
-USER dev
-WORKDIR /home/dev/app
-# Cache npx downloads between runs when using a volume-mounted cache (optional)
-ENV npm_config_cache=/home/dev/.npm
-# Default command: run server via npx
-ENTRYPOINT ["npx","-y","@wonderwhy-er/desktop-commander@latest"]
+RUN addgroup -g 1000 -S mhe && \
+    adduser -u 1000 -S mhe -G mhe
+
+# Install security updates
+RUN apk update && apk upgrade && \
+    apk add --no-cache dumb-init && \
+    rm -rf /var/cache/apk/*
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copy application code
+COPY . .
+
+# Change ownership to non-root user
+RUN chown -R mhe:mhe /workspace
+
+# Switch to non-root user
+USER mhe
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Default command
+CMD ["node", "--version"]

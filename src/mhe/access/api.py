@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from mhe.common.config import settings
-from mhe.access.routers import ingest
+from mhe.access.routers import ingest, search
 
 app = FastAPI(title="Memory Harvester Engine", version="0.1.0")
 
@@ -25,6 +25,7 @@ async def config():
     return {"embed_model": settings.embed_model, "embed_dim": settings.embed_dim}
 
 app.include_router(ingest.router, prefix="/ingest", tags=["ingest"])
+app.include_router(search.router, prefix="/api", tags=["search"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

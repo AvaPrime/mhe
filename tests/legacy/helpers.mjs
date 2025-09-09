@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PROJECT_ROOT = path.resolve(__dirname, "..");
+const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
 
 export class TestHelper {
   constructor() {
@@ -30,7 +30,7 @@ export class TestHelper {
     };
     
     const policy = { ...defaultPolicy, ...overrides };
-    const policyPath = path.join(PROJECT_ROOT, "test", "temp-policy.json");
+    const policyPath = path.join(PROJECT_ROOT, "tests", "legacy", "temp-policy.json");
     fs.writeFileSync(policyPath, JSON.stringify(policy, null, 2));
     this.tempFiles.push(policyPath);
     return policyPath;
@@ -38,8 +38,8 @@ export class TestHelper {
 
   // Start SafeExec server for testing
   async startSafeExec(policyPath) {
-    const serverPath = path.join(PROJECT_ROOT, "mcp", "safe-exec", "server.mjs");
-    const logPath = path.join(PROJECT_ROOT, "test", "safeexec-test.log.jsonl");
+    const serverPath = path.join(PROJECT_ROOT, "services", "mcp", "components", "safe-exec", "server.mjs");
+    const logPath = path.join(PROJECT_ROOT, "tests", "legacy", "safeexec-test.log.jsonl");
     
     const env = {
       ...process.env,

@@ -7,6 +7,7 @@ from mhe.common.config import settings
 # ---- Interfaces --------------------------------------------------------------
 class EmbeddingClient(Protocol):
     def embed(self, text: str) -> List[float]: ...
+    async def embed_batch(self, texts: List[str]) -> List[List[float]]: ...
 
 class GenerativeClient(Protocol):
     async def summarize(self, prompt: str) -> str: ...
@@ -20,6 +21,9 @@ class MockEmbeddingClient:
         vec = [rng.uniform(-1.0, 1.0) for _ in range(self.dim)]
         norm = math.sqrt(sum(x*x for x in vec)) or 1.0
         return [x / norm for x in vec]
+    
+    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+        return [self.embed(text) for text in texts]
 
 class MockGenerativeClient:
     async def summarize(self, prompt: str) -> str:
@@ -40,13 +44,21 @@ class OpenAIEmbeddingClient:
         self.model = model
         self.dim = dim
         self.api_key = settings.openai_api_key
+        self._mock_client = MockEmbeddingClient(self.dim)
 
     def embed(self, text: str) -> List[float]:
         # Placeholder: if no key, fallback to mock for now
         if not self.api_key:
-            return MockEmbeddingClient(self.dim).embed(text)
+            return self._mock_client.embed(text)
         # A real implementation would hit OpenAI embeddings API here.
-        return MockEmbeddingClient(self.dim).embed(text)
+        return self._mock_client.embed(text)
+    
+    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+        # Placeholder: if no key, fallback to mock for now
+        if not self.api_key:
+            return await self._mock_client.embed_batch(texts)
+        # A real implementation would hit OpenAI batch embeddings API here.
+        return await self._mock_client.embed_batch(texts)
 
 class OpenAIGenerativeClient:
     def __init__(self, model: str):
