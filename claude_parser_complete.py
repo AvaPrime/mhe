@@ -19,7 +19,7 @@ from functools import wraps
 from pathlib import Path
 from typing import (
     Any, Dict, List, Optional, Union, Tuple, Iterator,
-    TypeVar, Generic, Protocol, runtime_checkable, Callable
+    TypeVar, Generic, Protocol, runtime_checkable, Callable, Set
 )
 from uuid import uuid4
 
@@ -274,7 +274,18 @@ class InputValidator:
     
     @classmethod
     def validate_message(cls, message: Dict[str, Any], index: int) -> ParseResult[Dict[str, Any]]:
-        """Validate individual message structure."""
+        """Validate individual message structure.
+        
+        Args:
+            message: Dictionary containing message data to validate
+            index: Zero-based index of the message for error reporting
+            
+        Returns:
+            ParseResult containing the validated message or error information
+            
+        Note:
+            Validates required fields (role, content), role values, and content size limits
+        """
         try:
             # Check required fields
             required_fields = ['role', 'content']
@@ -307,7 +318,18 @@ class InputValidator:
     
     @classmethod
     def sanitize_content(cls, content: str) -> str:
-        """Sanitize message content with optimized patterns."""
+        """Sanitize message content with optimized patterns.
+        
+        Args:
+            content: Raw message content that may contain control characters or malformed text
+            
+        Returns:
+            Sanitized content with normalized line endings and removed control characters
+            
+        Note:
+            Removes control characters, normalizes line endings to \n, and reduces
+            excessive whitespace while preserving intentional formatting
+        """
         if not isinstance(content, str):
             return str(content)
         
@@ -435,7 +457,14 @@ class TimestampParser:
     
     @classmethod
     def _is_numeric_timestamp(cls, timestamp_str: str) -> bool:
-        """Check if string represents a numeric timestamp."""
+        """Check if string represents a numeric timestamp.
+        
+        Args:
+            timestamp_str: String to check for numeric timestamp format
+            
+        Returns:
+            True if the string can be parsed as a float, False otherwise
+        """
         try:
             float(timestamp_str)
             return True
@@ -444,7 +473,20 @@ class TimestampParser:
     
     @classmethod
     def _parse_unix_timestamp(cls, timestamp: Union[int, float]) -> datetime:
-        """Parse Unix timestamp with automatic unit detection."""
+        """Parse Unix timestamp with automatic unit detection.
+        
+        Args:
+            timestamp: Numeric timestamp (seconds, milliseconds, microseconds, or nanoseconds)
+            
+        Returns:
+            datetime object in UTC timezone
+            
+        Raises:
+            TimestampError: If timestamp is invalid or out of reasonable range
+            
+        Note:
+            Automatically detects timestamp precision based on magnitude and converts to seconds
+        """
         try:
             # Handle different timestamp precisions
             if timestamp > 1e12:  # Milliseconds
@@ -464,7 +506,18 @@ class TimestampParser:
     
     @classmethod
     def _preprocess_timestamp_string(cls, timestamp_str: str) -> str:
-        """Preprocess timestamp string for better parsing."""
+        """Preprocess timestamp string for better parsing.
+        
+        Args:
+            timestamp_str: Raw timestamp string that may need normalization
+            
+        Returns:
+            Normalized timestamp string with standardized format
+            
+        Note:
+            Replaces timezone abbreviations with offsets, normalizes separators,
+            and handles fractional seconds with varying precision
+        """
         # Replace timezone abbreviations with offsets
         for tz_abbr, offset in cls.TIMEZONE_MAP.items():
             if timestamp_str.endswith(f' {tz_abbr}'):
@@ -483,7 +536,18 @@ class TimestampParser:
     
     @classmethod
     def _try_standard_formats(cls, timestamp_str: str) -> Optional[datetime]:
-        """Try parsing with standard format list."""
+        """Try parsing with standard format list.
+        
+        Args:
+            timestamp_str: Preprocessed timestamp string to parse
+            
+        Returns:
+            Parsed datetime object with UTC timezone, or None if no format matches
+            
+        Note:
+            Iterates through predefined format strings and attempts parsing.
+            Automatically adds UTC timezone if none is present.
+        """
         for fmt in cls.FORMATS:
             try:
                 dt = datetime.strptime(timestamp_str, fmt)
@@ -515,7 +579,7 @@ class TimestampParser:
 class ClaudeParser:
     """Optimized Claude conversation parser with comprehensive error handling."""
     
-    def __init__(self, strict_mode: bool = True, max_retries: int = 3, enable_logging: bool = True):
+    def __init__(self, strict_mode: bool = True, max_retries: int = 3, enable_logging: bool = True) -> None:
         """Initialize parser with configuration options.
         
         Args:
@@ -523,13 +587,13 @@ class ClaudeParser:
             max_retries: Maximum number of retry attempts for failed operations
             enable_logging: If True, enable detailed logging
         """
-        self.strict_mode = strict_mode
-        self.max_retries = max_retries
-        self.enable_logging = enable_logging
-        self.patterns = OptimizedRegexPatterns()
-        self.validator = InputValidator()
-        self.timestamp_parser = TimestampParser()
-        self._stats = {
+        self.strict_mode: bool = strict_mode
+        self.max_retries: int = max_retries
+        self.enable_logging: bool = enable_logging
+        self.patterns: OptimizedRegexPatterns = OptimizedRegexPatterns()
+        self.validator: InputValidator = InputValidator()
+        self.timestamp_parser: TimestampParser = TimestampParser()
+        self._stats: Dict[str, int] = {
             'messages_parsed': 0,
             'artifacts_extracted': 0,
             'errors_encountered': 0,
@@ -540,9 +604,9 @@ class ClaudeParser:
         
         # Configure parser-specific logger
         if self.enable_logging:
-            self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+            self.logger: logging.Logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         else:
-            self.logger = logging.getLogger('null')
+            self.logger: logging.Logger = logging.getLogger('null')
             self.logger.addHandler(logging.NullHandler())
     
     def _load_content(self, content: Union[str, Path]) -> Dict[str, Any]:
@@ -609,7 +673,14 @@ class ClaudeParser:
             messages: List of message dictionaries to parse
             
         Returns:
-            List of successfully parsed messages
+            List of successfully parsed messages (may be fewer than input if errors occur)
+            
+        Raises:
+            ParseError: If strict_mode is True and any message fails validation
+            ValidationError: If strict_mode is True and message structure is invalid
+            
+        Note:
+            In non-strict mode, failed messages are logged as warnings and skipped
         """
         parsed_messages = []
         
@@ -662,11 +733,26 @@ class ClaudeParser:
         return parsed_messages
     
     def get_stats(self) -> Dict[str, int]:
-        """Get parsing statistics."""
+        """Get parsing statistics.
+        
+        Returns:
+            Dictionary containing current parsing statistics including:
+            - messages_parsed: Number of successfully parsed messages
+            - artifacts_extracted: Number of artifacts found and extracted
+            - errors_encountered: Number of errors that occurred
+            - warnings_generated: Number of warnings issued
+            - retries_attempted: Number of retry operations attempted
+            - successful_retries: Number of successful retry operations
+        """
         return self._stats.copy()
     
     def reset_stats(self) -> None:
-        """Reset parsing statistics."""
+        """Reset parsing statistics.
+        
+        Note:
+            Resets all statistical counters to zero. Useful when reusing
+            the same parser instance for multiple parsing operations.
+        """
         for key in self._stats:
             self._stats[key] = 0
     
@@ -739,7 +825,22 @@ class ClaudeParser:
             return ParseResult.error_result(f"Unexpected error: {str(e)}")
     
     def _parse_message(self, message_data: Dict[str, Any], index: int) -> Optional[ParsedMessage]:
-        """Parse individual message with error handling."""
+        """Parse individual message with error handling.
+        
+        Args:
+            message_data: Dictionary containing raw message data
+            index: Zero-based index of message in the conversation
+            
+        Returns:
+            ParsedMessage object if successful, None if parsing fails in non-strict mode
+            
+        Raises:
+            ParseError: If strict_mode is True and parsing fails
+            ValidationError: If message data is invalid and strict_mode is True
+            
+        Note:
+            Extracts artifacts, normalizes timestamps, and enriches with metadata
+        """
         try:
             # Extract basic fields
             role = message_data['role'].lower()
@@ -787,8 +888,18 @@ class ClaudeParser:
             return None
     
     def _parse_message_timestamp(self, message_data: Dict[str, Any]) -> datetime:
-        """Parse message timestamp with fallback options."""
-        timestamp_fields = ['timestamp', 'created_at', 'date', 'time']
+        """Parse message timestamp with fallback options.
+        
+        Args:
+            message_data: Dictionary containing message data with potential timestamp fields
+            
+        Returns:
+            Parsed datetime object, defaults to current UTC time if no valid timestamp found
+            
+        Note:
+            Tries multiple common timestamp field names in order of preference
+        """
+        timestamp_fields: List[str] = ['timestamp', 'created_at', 'date', 'time']
         
         for field in timestamp_fields:
             if field in message_data:
@@ -802,7 +913,22 @@ class ClaudeParser:
         return datetime.now(timezone.utc)
     
     def _extract_artifacts(self, content: str) -> List[ParsedArtifact]:
-        """Extract artifacts from message content with optimized patterns."""
+        """Extract artifacts from message content with optimized patterns.
+        
+        Args:
+            content: Raw message content that may contain artifacts and code blocks
+            
+        Returns:
+            List of ParsedArtifact objects found in the content
+            
+        Raises:
+            ParseError: If strict_mode is True and artifact parsing fails
+            ValidationError: If artifact structure is invalid and strict_mode is True
+            
+        Note:
+            Extracts both XML-style artifacts and fenced code blocks as artifacts.
+            Updates internal statistics for successful extractions.
+        """
         artifacts = []
         
         try:
@@ -878,7 +1004,18 @@ class ClaudeParser:
         return artifacts
     
     def extract_thinking_blocks(self, content: str) -> List[str]:
-        """Extract thinking blocks from content."""
+        """Extract thinking blocks from content.
+        
+        Args:
+            content: Raw message content that may contain <thinking> blocks
+            
+        Returns:
+            List of thinking block contents (text inside <thinking> tags)
+            
+        Note:
+            Extracts content from XML-style thinking tags, commonly used
+            in Claude conversations for internal reasoning
+        """
         thinking_blocks = []
         
         try:
@@ -909,7 +1046,17 @@ def parse_file(
     strict: bool = typer.Option(True, "--strict/--lenient", help="Enable strict validation mode"),
     stats: bool = typer.Option(False, "--stats", help="Show parsing statistics")
 ) -> None:
-    """Parse Claude export file and optionally save results."""
+    """Parse Claude export file and optionally save results.
+    
+    Args:
+        file_path: Path to the Claude export JSON file to parse
+        output: Optional path to save parsed results as JSON
+        strict: Whether to use strict validation mode (raises on errors)
+        stats: Whether to display parsing statistics after completion
+        
+    Raises:
+        typer.Exit: If file not found, parsing fails, or validation errors occur
+    """
     try:
         # Validate input file
         if not file_path.exists():
@@ -986,7 +1133,18 @@ def parse_file(
 def validate(
     file_path: Path = typer.Argument(..., help="Path to Claude export JSON file")
 ) -> None:
-    """Validate Claude export file without full parsing."""
+    """Validate Claude export file without full parsing.
+    
+    Args:
+        file_path: Path to the Claude export JSON file to validate
+        
+    Raises:
+        typer.Exit: If file not found, invalid JSON, or validation fails
+        
+    Note:
+        Performs lightweight validation of file structure and message format
+        without extracting artifacts or performing full parsing
+    """
     try:
         if not file_path.exists():
             typer.echo(f"Error: File not found: {file_path}", err=True)
