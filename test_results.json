@@ -1,5 +1,5 @@
 {
-  "execution_time": 150.192872,
+  "execution_time": 212.952967,
   "total_tests": 4,
   "passed_tests": 2,
   "failed_tests": 2,
@@ -7,10 +7,10 @@
   "security_issues": 1,
   "performance_metrics": [
     {
-      "cpu_usage": 3.299999999999997,
-      "memory_usage": 0.09999999999999964,
-      "response_time": 2.0023458003997803,
-      "throughput": 0.49941423694166315,
+      "cpu_usage": 0,
+      "memory_usage": 0,
+      "response_time": 2.00008225440979,
+      "throughput": 0.4999794372432412,
       "concurrent_connections": 1
     }
   ],
@@ -19,46 +19,46 @@
       "test_id": "TC-ENV-001",
       "name": "Environment Prerequisites",
       "status": "PASS",
-      "duration": 2.4295814037323,
-      "details": "Node.js: v22.16.0, npm: 10.9.2, Docker: Docker version 28.3.2, build 578ccf6, Compose: Docker Compose version v2.39.1-desktop.1",
+      "duration": 3.8725693225860596,
+      "details": "Node.js: v24.6.0, npm: 11.4.2, Docker: Docker version 28.3.2, build 578ccf6, Compose: Docker Compose version v2.39.1-desktop.1",
       "metrics": {
-        "duration": 2.4295814037323
+        "duration": 3.8725693225860596
       },
-      "timestamp": "2025-09-09T20:25:59.626059"
+      "timestamp": "2025-09-10T01:37:10.946246"
     },
     {
       "test_id": "TC-CONFIG-001",
       "name": "Configuration Validation",
-      "status": "FAIL",
-      "duration": 0.010388851165771484,
-      "details": "Missing NPX server configuration",
+      "status": "PASS",
+      "duration": 0.01689600944519043,
+      "details": "MCP configuration is valid and complete",
       "metrics": {
-        "duration": 0.010388851165771484
+        "duration": 0.01689600944519043,
+        "config_completeness": 1.0
       },
-      "timestamp": "2025-09-09T20:25:59.636519"
+      "timestamp": "2025-09-10T01:37:10.963196"
     },
     {
       "test_id": "TC-NPX-001",
       "name": "NPX Deployment",
       "status": "FAIL",
-      "duration": 60.06716823577881,
+      "duration": 202.97591829299927,
       "details": "NPX deployment failed: Command timed out",
       "metrics": {
-        "duration": 60.06716823577881
+        "duration": 202.97591829299927
       },
-      "timestamp": "2025-09-09T20:26:59.703781"
+      "timestamp": "2025-09-10T01:40:33.939164"
     },
     {
       "test_id": "TC-DOCKER-001",
       "name": "Docker Deployment",
-      "status": "PASS",
-      "duration": 83.51139330863953,
-      "details": "Docker deployment successful. Container built and started successfully.",
+      "status": "FAIL",
+      "duration": 2.036937713623047,
+      "details": "Docker build failed: The filename, directory name, or volume label syntax is incorrect.\n",
       "metrics": {
-        "duration": 83.51139330863953,
-        "build_success": 1.0
+        "duration": 2.036937713623047
       },
-      "timestamp": "2025-09-09T20:28:23.215260"
+      "timestamp": "2025-09-10T01:40:35.976149"
     }
   ],
   "security_results": [
@@ -67,7 +67,7 @@
       "vulnerability_type": "Docker Security Configuration",
       "severity": "MEDIUM",
       "status": "FAIL",
-      "description": "Missing security configurations: non-root user, memory limits, read-only filesystem",
+      "description": "Missing security configurations: memory limits, cpu limits",
       "remediation": "Implement missing Docker security configurations"
     }
   ]

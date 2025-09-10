@@ -170,8 +170,18 @@ class TestSuite:
         start_time = time.time()
         
         try:
-            # Test NPX package availability
-            code, stdout, stderr = self.run_command("npx desktop-commander-test --help", timeout=60)
+            # Check if package is already installed globally
+            check_code, check_out, check_err = self.run_command("npm list -g @wonderwhy-er/desktop-commander", timeout=30)
+            
+            if check_code != 0:
+                # Pre-install the package to avoid download timeout during test
+                self.log("Pre-installing NPX package...")
+                install_code, install_out, install_err = self.run_command("npm install -g @wonderwhy-er/desktop-commander@latest", timeout=180)
+                if install_code != 0:
+                    self.log(f"Global install failed, proceeding with NPX: {install_err}")
+            
+            # Test NPX package availability with increased timeout
+            code, stdout, stderr = self.run_command("npx -y @wonderwhy-er/desktop-commander@latest --help", timeout=180)
             
             if code != 0 and "Need to install" not in stderr:
                 raise Exception(f"NPX deployment failed: {stderr}")
@@ -226,26 +236,27 @@ class TestSuite:
             
             # Set workspace environment variable and build
             workspace_path = str(self.workspace_path.absolute())
-            build_command = f'WORKSPACE="{workspace_path}" docker compose -f docker/desktop-commander/docker-compose.yml build'
             
+            # Use PowerShell environment variable syntax in the command
+            build_command = f'$env:WORKSPACE="{workspace_path}"; docker compose -f docker/desktop-commander/docker-compose.yml build'
             build_code, build_out, build_err = self.run_command(build_command, timeout=300)
             
             if build_code != 0:
                 raise Exception(f"Docker build failed: {build_err}")
             
             # Test container startup (don't leave it running)
-            up_command = f'WORKSPACE="{workspace_path}" docker compose -f docker/desktop-commander/docker-compose.yml up -d'
+            up_command = f'$env:WORKSPACE="{workspace_path}"; docker compose -f docker/desktop-commander/docker-compose.yml up -d'
             up_code, up_out, up_err = self.run_command(up_command, timeout=60)
             
             if up_code != 0:
                 raise Exception(f"Docker container startup failed: {up_err}")
             
             # Check container status
-            ps_command = f'WORKSPACE="{workspace_path}" docker compose -f docker/desktop-commander/docker-compose.yml ps'
+            ps_command = f'$env:WORKSPACE="{workspace_path}"; docker compose -f docker/desktop-commander/docker-compose.yml ps'
             ps_code, ps_out, ps_err = self.run_command(ps_command)
             
             # Clean up - stop the container
-            down_command = f'WORKSPACE="{workspace_path}" docker compose -f docker/desktop-commander/docker-compose.yml down'
+            down_command = f'$env:WORKSPACE="{workspace_path}"; docker compose -f docker/desktop-commander/docker-compose.yml down'
             self.run_command(down_command)
             
             if ps_code != 0:

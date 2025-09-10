@@ -1,16 +1,16 @@
 {
-  "mcpServers": [
-    {
-      "name": "desktop-commander",
-      "command": ["npx", "-y", "@wonderwhy-er/desktop-commander@latest"],
+  "mcpServers": {
+    "desktop-commander-npx": {
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander@latest"],
       "env": {
         "DC_ALLOWED_DIRS": "${workspaceFolder}"
       }
     },
-    {
-      "name": "desktop-commander-docker",
-      "command": [
-        "docker", "compose",
+    "desktop-commander-docker": {
+      "command": "docker",
+      "args": [
+        "compose",
         "-f", "docker/desktop-commander/docker-compose.yml",
         "run", "--rm", "desktop-commander"
       ],
@@ -18,5 +18,5 @@
         "WORKSPACE": "${workspaceFolder}"
       }
     }
-  ]
+  }
 }

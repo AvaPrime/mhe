@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Upload, Brain, Network, Target, Bot, FileText, Search, Download, Plus, Trash2, Edit3, GitBranch, Zap, Database, Settings, Link, Eye, EyeOff, Filter, Tag, Globe, Key, Wifi, WifiOff, Play, Pause, RefreshCw, Calendar, TrendingUp, Code, MessageSquare, Users, Sparkles, Clock, CheckCircle } from 'lucide-react';
 
 const CodessaMemoryHarvester = () => {
@@ -28,6 +28,24 @@ const CodessaMemoryHarvester = () => {
     projectsGenerated: 0,
     agentsDeployed: 0
   });
+  
+  // Enhanced Search & Discovery State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilters, setSearchFilters] = useState({
+    dateRange: 'all',
+    contentType: 'all',
+    source: 'all',
+    tags: [],
+    minFragments: 0,
+    sortBy: 'relevance',
+    priority: 'all',
+    collaboration: 'all',
+    exportFormat: 'all',
+    status: 'all'
+  });
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Sample enhanced data initialization
   useEffect(() => {
@@ -190,6 +208,94 @@ const CodessaMemoryHarvester = () => {
       'data-processing', 'integration', 'scalability', 'security'
     ]);
   }, []);
+  
+  // Enhanced search functionality with advanced filtering
+  const performSearch = useCallback(async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    
+    // Simulate API call with comprehensive filtering
+    setTimeout(() => {
+      let results = [...conversations, ...projects].filter(item => {
+        const matchesQuery = item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           item.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           item.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        const matchesDateRange = searchFilters.dateRange === 'all' || 
+          (searchFilters.dateRange === 'week' && new Date(item.date || item.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
+          (searchFilters.dateRange === 'month' && new Date(item.date || item.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) ||
+          (searchFilters.dateRange === 'quarter' && new Date(item.date || item.createdAt) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
+        
+        const matchesContentType = searchFilters.contentType === 'all' ||
+          (searchFilters.contentType === 'conversations' && item.messages) ||
+          (searchFilters.contentType === 'projects' && item.fragments) ||
+          (searchFilters.contentType === 'insights' && item.insights);
+        
+        const matchesSource = searchFilters.source === 'all' ||
+          item.source === searchFilters.source;
+        
+        const matchesTags = searchFilters.tags.length === 0 ||
+          searchFilters.tags.some(tag => item.tags?.includes(tag));
+        
+        const matchesFragments = !item.fragments || item.fragments >= searchFilters.minFragments;
+        
+        const matchesPriority = searchFilters.priority === 'all' ||
+          item.priority === searchFilters.priority;
+        
+        const matchesCollaboration = searchFilters.collaboration === 'all' ||
+          (searchFilters.collaboration === 'shared' && item.isShared) ||
+          (searchFilters.collaboration === 'private' && !item.isShared && !item.isCollaborative) ||
+          (searchFilters.collaboration === 'collaborative' && item.isCollaborative);
+        
+        const matchesStatus = searchFilters.status === 'all' ||
+          item.status === searchFilters.status ||
+          (searchFilters.status === 'active' && !item.status) ||
+          (searchFilters.status === 'completed' && item.completion === 100);
+        
+        return matchesQuery && matchesDateRange && matchesContentType && matchesSource && 
+               matchesTags && matchesFragments && matchesPriority && matchesCollaboration && matchesStatus;
+      });
+      
+      // Enhanced sorting options
+      switch (searchFilters.sortBy) {
+        case 'date':
+          results.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+          break;
+        case 'date-asc':
+          results.sort((a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt));
+          break;
+        case 'fragments':
+          results.sort((a, b) => (b.fragments || 0) - (a.fragments || 0));
+          break;
+        case 'priority':
+          const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+          results.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
+          break;
+        case 'alphabetical':
+          results.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+          break;
+        default: // relevance
+          // Keep original order for relevance-based sorting
+          break;
+      }
+      
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 500);
+  }, [searchQuery, searchFilters, conversations, projects]);
+  
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      performSearch();
+    }, 300);
+    
+    return () => clearTimeout(debounceTimer);
+  }, [performSearch]);
 
   const renderEnhancedHarvesting = () => (
     <div className="space-y-6">
@@ -429,6 +535,478 @@ const CodessaMemoryHarvester = () => {
       </div>
     </div>
   );
+  
+  const renderEnhancedSearch = () => (
+    <div className="space-y-6">
+      {/* Enhanced Search Interface */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Search className="w-5 h-5 text-blue-600" />
+          Enhanced Content Discovery
+        </h3>
+        
+        {/* Main Search Bar */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search conversations, projects, insights..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+            </div>
+          )}
+        </div>
+        
+        {/* Quick Filter Buttons */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => setSearchFilters({...searchFilters, contentType: 'conversations'})}
+            className={`px-3 py-1 text-sm rounded-full transition-colors ${
+              searchFilters.contentType === 'conversations'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            💬 Conversations
+          </button>
+          <button
+            onClick={() => setSearchFilters({...searchFilters, contentType: 'projects'})}
+            className={`px-3 py-1 text-sm rounded-full transition-colors ${
+              searchFilters.contentType === 'projects'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            📁 Projects
+          </button>
+          <button
+            onClick={() => setSearchFilters({...searchFilters, priority: 'high'})}
+            className={`px-3 py-1 text-sm rounded-full transition-colors ${
+              searchFilters.priority === 'high'
+                ? 'bg-red-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            🔥 High Priority
+          </button>
+          <button
+            onClick={() => setSearchFilters({...searchFilters, dateRange: 'week'})}
+            className={`px-3 py-1 text-sm rounded-full transition-colors ${
+              searchFilters.dateRange === 'week'
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            📅 This Week
+          </button>
+          <button
+            onClick={() => setSearchFilters({...searchFilters, collaboration: 'shared'})}
+            className={`px-3 py-1 text-sm rounded-full transition-colors ${
+              searchFilters.collaboration === 'shared'
+                ? 'bg-purple-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            👥 Shared
+          </button>
+          <button
+            onClick={() => setSearchFilters({
+              dateRange: 'all',
+              contentType: 'all',
+              source: 'all',
+              tags: [],
+              minFragments: 0,
+              sortBy: 'relevance',
+              priority: 'all',
+              collaboration: 'all',
+              exportFormat: 'all',
+              status: 'all'
+            })}
+            className="px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300"
+          >
+            🔄 Clear All
+          </button>
+        </div>
+        
+        {/* Search Suggestions */}
+        {!searchQuery && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-2">Popular searches:</p>
+            <div className="flex flex-wrap gap-2">
+              {['API integration', 'mobile app', 'machine learning', 'documentation', 'user interface'].map(suggestion => (
+                <button
+                  key={suggestion}
+                  onClick={() => setSearchQuery(suggestion)}
+                  className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Advanced Search Toggle */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+            className="flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 rounded"
+          >
+            <Filter className="w-4 h-4" />
+            Advanced Filters
+            {showAdvancedSearch ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+          </button>
+          
+          <div className="flex items-center justify-between flex-1">
+            <div className="text-sm text-gray-500">
+              {searchResults.length > 0 && `${searchResults.length} results found`}
+            </div>
+            
+            {/* Export Options */}
+            {searchResults.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 mr-2">Export:</span>
+                <button
+                  onClick={() => exportSearchResults('json')}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  JSON
+                </button>
+                <button
+                  onClick={() => exportSearchResults('csv')}
+                  className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200 flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  CSV
+                </button>
+                <button
+                  onClick={() => exportSearchResults('markdown')}
+                  className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded hover:bg-purple-200 flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  MD
+                </button>
+                <button
+                  onClick={() => exportSearchResults('pdf')}
+                  className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  PDF
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Advanced Search Filters */}
+        {showAdvancedSearch && (
+          <div className="bg-white rounded-lg border p-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Date Range Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Date Range
+                </label>
+                <select
+                  value={searchFilters.dateRange}
+                  onChange={(e) => setSearchFilters({...searchFilters, dateRange: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="all">All Time</option>
+                  <option value="week">Past Week</option>
+                  <option value="month">Past Month</option>
+                  <option value="quarter">Past Quarter</option>
+                </select>
+              </div>
+              
+              {/* Content Type Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FileText className="w-4 h-4 inline mr-1" />
+                  Content Type
+                </label>
+                <select
+                  value={searchFilters.contentType}
+                  onChange={(e) => setSearchFilters({...searchFilters, contentType: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="all">All Content</option>
+                  <option value="conversations">Conversations</option>
+                  <option value="projects">Projects</option>
+                  <option value="insights">Insights</option>
+                </select>
+              </div>
+              
+              {/* Source Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Globe className="w-4 h-4 inline mr-1" />
+                  Source Platform
+                </label>
+                <select
+                  value={searchFilters.source}
+                  onChange={(e) => setSearchFilters({...searchFilters, source: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="all">All Sources</option>
+                  <option value="ChatGPT">ChatGPT</option>
+                  <option value="Claude">Claude</option>
+                  <option value="Gemini">Gemini</option>
+                  <option value="Manual">Manual Upload</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {/* Minimum Fragments */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Target className="w-4 h-4 inline mr-1" />
+                  Min Fragments: {searchFilters.minFragments}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  value={searchFilters.minFragments}
+                  onChange={(e) => setSearchFilters({...searchFilters, minFragments: parseInt(e.target.value)})}
+                  className="w-full"
+                />
+              </div>
+              
+              {/* Priority Level */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Star className="w-4 h-4 inline mr-1" />
+                  Priority Level
+                </label>
+                <select
+                  value={searchFilters.priority}
+                  onChange={(e) => setSearchFilters({...searchFilters, priority: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="all">All Priorities</option>
+                  <option value="high">High Priority</option>
+                  <option value="medium">Medium Priority</option>
+                  <option value="low">Low Priority</option>
+                </select>
+              </div>
+              
+              {/* Sort By */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <TrendingUp className="w-4 h-4 inline mr-1" />
+                  Sort By
+                </label>
+                <select
+                  value={searchFilters.sortBy}
+                  onChange={(e) => setSearchFilters({...searchFilters, sortBy: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="date">Date (Newest)</option>
+                  <option value="date-asc">Date (Oldest)</option>
+                  <option value="fragments">Fragment Count</option>
+                  <option value="priority">Priority</option>
+                  <option value="alphabetical">Alphabetical</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Additional Advanced Filters Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {/* Collaboration Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Users className="w-4 h-4 inline mr-1" />
+                  Collaboration
+                </label>
+                <select
+                  value={searchFilters.collaboration}
+                  onChange={(e) => setSearchFilters({...searchFilters, collaboration: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="all">All Items</option>
+                  <option value="shared">Shared Items</option>
+                  <option value="private">Private Items</option>
+                  <option value="collaborative">Team Projects</option>
+                </select>
+              </div>
+              
+              {/* File Format */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FileText className="w-4 h-4 inline mr-1" />
+                  Export Format
+                </label>
+                <select
+                  value={searchFilters.exportFormat}
+                  onChange={(e) => setSearchFilters({...searchFilters, exportFormat: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="all">All Formats</option>
+                  <option value="markdown">Markdown</option>
+                  <option value="json">JSON</option>
+                  <option value="csv">CSV</option>
+                  <option value="pdf">PDF</option>
+                </select>
+              </div>
+              
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Activity className="w-4 h-4 inline mr-1" />
+                  Status
+                </label>
+                <select
+                  value={searchFilters.status}
+                  onChange={(e) => setSearchFilters({...searchFilters, status: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Tag Filter */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Tag className="w-4 h-4 inline mr-1" />
+                Filter by Tags
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {autoTags.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      const newTags = searchFilters.tags.includes(tag)
+                        ? searchFilters.tags.filter(t => t !== tag)
+                        : [...searchFilters.tags, tag];
+                      setSearchFilters({...searchFilters, tags: newTags});
+                    }}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      searchFilters.tags.includes(tag)
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Search Results */}
+      {searchQuery && (
+        <div className="bg-white rounded-lg border">
+          <div className="p-4 border-b">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              Search Results
+              {searchResults.length > 0 && (
+                <span className="text-sm text-gray-500">({searchResults.length} found)</span>
+              )}
+            </h4>
+          </div>
+          
+          <div className="divide-y">
+            {searchResults.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No results found for "{searchQuery}"</p>
+                <p className="text-sm mt-1">Try adjusting your search terms or filters</p>
+              </div>
+            ) : (
+              searchResults.map((result, index) => (
+                <div key={result.id || index} className="p-4 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h5 className="font-medium text-lg">{result.title}</h5>
+                        <div className={`px-2 py-1 rounded text-xs ${
+                          result.fragments ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {result.fragments ? 'Project' : 'Conversation'}
+                        </div>
+                        {result.priority && (
+                          <div className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                            Priority: {result.priority}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                        {result.description || 'No description available'}
+                      </p>
+                      
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        {result.fragments && (
+                          <span className="flex items-center gap-1">
+                            <Target className="w-3 h-3" />
+                            {result.fragments} fragments
+                          </span>
+                        )}
+                        {result.date && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(result.date).toLocaleDateString()}
+                          </span>
+                        )}
+                        {result.source && (
+                          <span className="flex items-center gap-1">
+                            <Globe className="w-3 h-3" />
+                            {result.source}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {result.tags && result.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {result.tags.slice(0, 3).map(tag => (
+                            <span key={tag} className="px-1 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                              {tag}
+                            </span>
+                          ))}
+                          {result.tags.length > 3 && (
+                            <span className="text-xs text-gray-400">+{result.tags.length - 3} more</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2 ml-4">
+                      <button className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200">
+                        View
+                      </button>
+                      {result.fragments && (
+                        <button className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded hover:bg-green-200">
+                          Open Project
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   const renderEnhancedProjects = () => (
     <div className="space-y-6">
