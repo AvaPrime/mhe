@@ -1,16 +1,122 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Upload, Brain, Network, Target, Bot, FileText, Search, Download, Plus, Trash2, Edit3, GitBranch, Zap, Database, Settings, Link, Eye, EyeOff, Filter, Tag, Globe, Key, Wifi, WifiOff, Play, Pause, RefreshCw, Calendar, TrendingUp, Code, MessageSquare, Users, Sparkles, Clock, CheckCircle } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { Conversation, Message, Project, Agent, APIConnection, SearchFilters } from './types';
+import { Upload, Brain, Network, Target, Bot, FileText, Search, Download, Plus, Trash2, Edit3, GitBranch, Zap, Database, Settings, Link, Eye, EyeOff, Filter, Tag, Globe, Key, Wifi, WifiOff, Play, Pause, RefreshCw, Calendar, TrendingUp, Code, MessageSquare, Users, Sparkles, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import SearchPanel from './components/SearchPanel';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
+import APIConnectionsPanel from './components/APIConnectionsPanel';
+import ContentManagementPanel from './components/ContentManagementPanel';
+
+// Error Boundary Component
+class CodessaErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    this.setState({
+      error: error,
+      errorInfo: errorInfo
+    });
+    console.error('Codessa Error Boundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center gap-2 text-red-600 mb-4">
+              <AlertTriangle className="h-5 w-5" />
+              <h2 className="text-xl font-semibold">Something went wrong</h2>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-red-800">
+                The Codessa Memory Harvester encountered an unexpected error. 
+                Please refresh the page to try again.
+              </p>
+            </div>
+            
+            <details className="bg-gray-100 p-4 rounded-lg mb-4">
+              <summary className="cursor-pointer font-medium mb-2">Error Details</summary>
+              <pre className="text-sm text-gray-700 whitespace-pre-wrap overflow-auto max-h-40">
+                {this.state.error && this.state.error.toString()}
+                {this.state.errorInfo.componentStack}
+              </pre>
+            </details>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => window.location.reload()} 
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh Page
+              </button>
+              <button 
+                onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+                className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const CodessaMemoryHarvester = () => {
-  const [conversations, setConversations] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [agents, setAgents] = useState([]);
-  const [knowledgeGraph, setKnowledgeGraph] = useState({ nodes: [], edges: [] });
-  const [activeTab, setActiveTab] = useState('harvest');
-  const [processingStatus, setProcessingStatus] = useState('');
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [apiConnections, setApiConnections] = useState({});
-  const [liveStreams, setLiveStreams] = useState([]);
+  // Error state management
+  const [errors, setErrors] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Error handling utilities
+  const addError = useCallback((error, context = '') => {
+    const errorObj = {
+      id: Date.now(),
+      message: error.message || error.toString(),
+      context,
+      timestamp: new Date().toISOString()
+    };
+    setErrors(prev => [errorObj, ...prev.slice(0, 4)]); // Keep only last 5 errors
+    console.error(`Codessa Error [${context}]:`, error);
+  }, []);
+  
+  const clearErrors = useCallback(() => {
+    setErrors([]);
+  }, []);
+  
+  const handleAsyncOperation = useCallback(async (operation, context = '') => {
+    try {
+      setIsLoading(true);
+      const result = await operation();
+      return result;
+    } catch (error) {
+      addError(error, context);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [addError]);
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [knowledgeGraph, setKnowledgeGraph] = useState<{nodes: any[], edges: any[]}>({ nodes: [], edges: [] });
+  const [activeTab, setActiveTab] = useState<string>('harvest');
+  const [processingStatus, setProcessingStatus] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [apiConnections, setApiConnections] = useState<Record<string, APIConnection>>({});
+  const [liveStreams, setLiveStreams] = useState<any[]>([]);
   const [conversationFilters, setConversationFilters] = useState({
     includeUser: true,
     includeAssistant: true,
@@ -30,8 +136,8 @@ const CodessaMemoryHarvester = () => {
   });
   
   // Enhanced Search & Discovery State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchFilters, setSearchFilters] = useState({
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     dateRange: 'all',
     contentType: 'all',
     source: 'all',
@@ -43,9 +149,9 @@ const CodessaMemoryHarvester = () => {
     exportFormat: 'all',
     status: 'all'
   });
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<Conversation[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
   // Sample enhanced data initialization
   useEffect(() => {
@@ -210,192 +316,154 @@ const CodessaMemoryHarvester = () => {
   }, []);
   
   // Enhanced search functionality with advanced filtering
+  // Simplified search logic - moved complex logic to SearchPanel component
   const performSearch = useCallback(async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
+    // This is now handled by the SearchPanel component
+    // Keeping this for backward compatibility
+  }, []);
+
+  // Export functionality implementation
+  const downloadFile = useCallback((content, filename, type) => {
+    try {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download file. Please try again.');
+    }
+  }, []);
+
+  const exportSearchResults = useCallback((format) => {
+    if (!searchResults.length) {
+      alert('No search results to export.');
       return;
     }
-    
-    setIsSearching(true);
-    
-    // Simulate API call with comprehensive filtering
-    setTimeout(() => {
-      let results = [...conversations, ...projects].filter(item => {
-        const matchesQuery = item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           item.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           item.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-        
-        const matchesDateRange = searchFilters.dateRange === 'all' || 
-          (searchFilters.dateRange === 'week' && new Date(item.date || item.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
-          (searchFilters.dateRange === 'month' && new Date(item.date || item.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) ||
-          (searchFilters.dateRange === 'quarter' && new Date(item.date || item.createdAt) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
-        
-        const matchesContentType = searchFilters.contentType === 'all' ||
-          (searchFilters.contentType === 'conversations' && item.messages) ||
-          (searchFilters.contentType === 'projects' && item.fragments) ||
-          (searchFilters.contentType === 'insights' && item.insights);
-        
-        const matchesSource = searchFilters.source === 'all' ||
-          item.source === searchFilters.source;
-        
-        const matchesTags = searchFilters.tags.length === 0 ||
-          searchFilters.tags.some(tag => item.tags?.includes(tag));
-        
-        const matchesFragments = !item.fragments || item.fragments >= searchFilters.minFragments;
-        
-        const matchesPriority = searchFilters.priority === 'all' ||
-          item.priority === searchFilters.priority;
-        
-        const matchesCollaboration = searchFilters.collaboration === 'all' ||
-          (searchFilters.collaboration === 'shared' && item.isShared) ||
-          (searchFilters.collaboration === 'private' && !item.isShared && !item.isCollaborative) ||
-          (searchFilters.collaboration === 'collaborative' && item.isCollaborative);
-        
-        const matchesStatus = searchFilters.status === 'all' ||
-          item.status === searchFilters.status ||
-          (searchFilters.status === 'active' && !item.status) ||
-          (searchFilters.status === 'completed' && item.completion === 100);
-        
-        return matchesQuery && matchesDateRange && matchesContentType && matchesSource && 
-               matchesTags && matchesFragments && matchesPriority && matchesCollaboration && matchesStatus;
-      });
-      
-      // Enhanced sorting options
-      switch (searchFilters.sortBy) {
-        case 'date':
-          results.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+
+    try {
+      const timestamp = new Date().toISOString().split('T')[0];
+      let content, filename, mimeType;
+
+      switch (format) {
+        case 'json':
+          content = JSON.stringify(searchResults, null, 2);
+          filename = `search-results-${timestamp}.json`;
+          mimeType = 'application/json';
           break;
-        case 'date-asc':
-          results.sort((a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt));
+        
+        case 'csv':
+          const headers = ['Title', 'Type', 'Priority', 'Status', 'Fragments', 'Last Updated', 'Tags'];
+          const csvRows = [headers.join(',')];
+          
+          searchResults.forEach(item => {
+            const row = [
+              `"${(item.title || '').replace(/"/g, '""')}"`,
+              item.fragments ? 'Project' : 'Conversation',
+              item.priority || 'N/A',
+              item.status || 'N/A',
+              item.fragments || 0,
+              item.lastUpdated || item.date || 'N/A',
+              `"${(item.tags || []).join(', ')}"`
+            ];
+            csvRows.push(row.join(','));
+          });
+          
+          content = csvRows.join('\n');
+          filename = `search-results-${timestamp}.csv`;
+          mimeType = 'text/csv';
           break;
-        case 'fragments':
-          results.sort((a, b) => (b.fragments || 0) - (a.fragments || 0));
+        
+        case 'markdown':
+          content = `# Search Results Export\n\nGenerated on: ${new Date().toLocaleString()}\nTotal Results: ${searchResults.length}\n\n`;
+          
+          searchResults.forEach((item, index) => {
+            content += `## ${index + 1}. ${item.title || 'Untitled'}\n\n`;
+            content += `- **Type**: ${item.fragments ? 'Project' : 'Conversation'}\n`;
+            if (item.priority) content += `- **Priority**: ${item.priority}\n`;
+            if (item.status) content += `- **Status**: ${item.status}\n`;
+            if (item.fragments) content += `- **Fragments**: ${item.fragments}\n`;
+            if (item.description) content += `- **Description**: ${item.description}\n`;
+            if (item.tags && item.tags.length) content += `- **Tags**: ${item.tags.join(', ')}\n`;
+            content += `\n---\n\n`;
+          });
+          
+          filename = `search-results-${timestamp}.md`;
+          mimeType = 'text/markdown';
           break;
-        case 'priority':
-          const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
-          results.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
+        
+        case 'pdf':
+          // For PDF, we'll create a simple HTML structure that can be printed to PDF
+          content = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Search Results Export</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; border-bottom: 2px solid #007bff; }
+    .result { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    .title { font-size: 18px; font-weight: bold; color: #007bff; }
+    .meta { color: #666; font-size: 14px; margin: 5px 0; }
+    .tags { background: #f8f9fa; padding: 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>Search Results Export</h1>
+  <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+  <p><strong>Total Results:</strong> ${searchResults.length}</p>
+`;
+          
+          searchResults.forEach((item, index) => {
+            content += `
+  <div class="result">
+    <div class="title">${index + 1}. ${item.title || 'Untitled'}</div>
+    <div class="meta">Type: ${item.fragments ? 'Project' : 'Conversation'}</div>
+`;
+            if (item.priority) content += `    <div class="meta">Priority: ${item.priority}</div>\n`;
+            if (item.status) content += `    <div class="meta">Status: ${item.status}</div>\n`;
+            if (item.fragments) content += `    <div class="meta">Fragments: ${item.fragments}</div>\n`;
+            if (item.description) content += `    <div class="meta">Description: ${item.description}</div>\n`;
+            if (item.tags && item.tags.length) {
+              content += `    <div class="tags">Tags: ${item.tags.join(', ')}</div>\n`;
+            }
+            content += `  </div>`;
+          });
+          
+          content += `\n</body>\n</html>`;
+          filename = `search-results-${timestamp}.html`;
+          mimeType = 'text/html';
           break;
-        case 'alphabetical':
-          results.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-          break;
-        default: // relevance
-          // Keep original order for relevance-based sorting
-          break;
+        
+        default:
+          throw new Error(`Unsupported export format: ${format}`);
       }
-      
-      setSearchResults(results);
-      setIsSearching(false);
-    }, 500);
-  }, [searchQuery, searchFilters, conversations, projects]);
-  
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      performSearch();
-    }, 300);
-    
-    return () => clearTimeout(debounceTimer);
-  }, [performSearch]);
+
+      downloadFile(content, filename, mimeType);
+    } catch (error) {
+      console.error('Error exporting search results:', error);
+      alert(`Failed to export as ${format.toUpperCase()}. Please try again.`);
+    }
+  }, [searchResults, downloadFile]);
 
   const renderEnhancedHarvesting = () => (
     <div className="space-y-6">
-      {/* API Connections Panel */}
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-lg border border-emerald-200">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Globe className="w-5 h-5 text-emerald-600" />
-          Live API Connections
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {Object.entries(apiConnections).map(([platform, config]) => (
-            <div key={platform} className="bg-white rounded-lg border p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium capitalize">{platform}</h4>
-                {config.status === 'connected' ? (
-                  <Wifi className="w-4 h-4 text-green-500" />
-                ) : (
-                  <WifiOff className="w-4 h-4 text-red-500" />
-                )}
-              </div>
-              
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Model:</span>
-                  <span className="font-mono">{config.model}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Status:</span>
-                  <span className={`px-1 rounded ${
-                    config.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {config.status}
-                  </span>
-                </div>
-                {config.lastSync && (
-                  <div className="text-gray-400 text-xs">
-                    Last: {new Date(config.lastSync).toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-              
-              <button className="w-full mt-3 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded flex items-center justify-center gap-1">
-                <Key className="w-3 h-3" />
-                Configure
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* API Connections Component */}
+      <APIConnectionsPanel 
+        apiConnections={apiConnections}
+        liveStreams={liveStreams}
+      />
 
-      {/* Shared Links Panel */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Link className="w-5 h-5 text-blue-600" />
-          Shared Conversation Links
-        </h3>
-        
-        <div className="flex gap-4 mb-4">
-          <input
-            type="url"
-            placeholder="Paste conversation share link (ChatGPT, Claude, etc.)"
-            className="flex-1 px-3 py-2 border rounded-lg text-sm"
-          />
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Link
-          </button>
-        </div>
-        
-        <div className="space-y-2">
-          {sharedLinks.map(link => (
-            <div key={link.id} className="flex items-center justify-between p-3 bg-white rounded border">
-              <div className="flex-1">
-                <div className="font-medium text-sm">{link.title}</div>
-                <div className="text-xs text-gray-500 flex items-center gap-2">
-                  <span className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${
-                      link.platform === 'ChatGPT' ? 'bg-green-500' : 'bg-orange-500'
-                    }`}></div>
-                    {link.platform}
-                  </span>
-                  <span>{link.extractedFragments} fragments</span>
-                  <span>{new Date(link.addedDate).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`px-2 py-1 rounded text-xs ${
-                  link.status === 'completed' ? 'bg-green-100 text-green-700' :
-                  link.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
-                  {link.status}
-                </div>
-                <button className="p-1 hover:bg-gray-100 rounded">
-                  <Edit3 className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* Content Management Component */}
+      <ContentManagementPanel 
+        conversations={conversations}
+        projects={projects}
+        sharedLinks={sharedLinks}
+      />
         </div>
       </div>
 
@@ -1010,51 +1078,11 @@ const CodessaMemoryHarvester = () => {
 
   const renderEnhancedProjects = () => (
     <div className="space-y-6">
-      {/* Real-time Analytics Dashboard */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-lg border border-indigo-200">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-indigo-600" />
-          Real-time Project Analytics
-        </h3>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{realTimeAnalytics.totalTokens.toLocaleString()}</div>
-            <div className="text-sm text-gray-500">Total Tokens</div>
-            <div className="text-xs text-green-600 flex items-center justify-center gap-1 mt-1">
-              <TrendingUp className="w-3 h-3" />
-              +12% today
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{realTimeAnalytics.projectsGenerated}</div>
-            <div className="text-sm text-gray-500">Projects Generated</div>
-            <div className="text-xs text-blue-600 flex items-center justify-center gap-1 mt-1">
-              <Clock className="w-3 h-3" />
-              3 this hour
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{realTimeAnalytics.agentsDeployed}</div>
-            <div className="text-sm text-gray-500">Agents Deployed</div>
-            <div className="text-xs text-purple-600 flex items-center justify-center gap-1 mt-1">
-              <CheckCircle className="w-3 h-3" />
-              All active
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{realTimeAnalytics.activeConnections}</div>
-            <div className="text-sm text-gray-500">Live Connections</div>
-            <div className="text-xs text-green-600 flex items-center justify-center gap-1 mt-1">
-              <Wifi className="w-3 h-3" />
-              99.9% uptime
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Analytics Dashboard Component */}
+      <AnalyticsDashboard 
+        realTimeAnalytics={realTimeAnalytics}
+        knowledgeGraphData={knowledgeGraphData}
+      />
 
       {/* Enhanced Project Matrix */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border border-green-200">
@@ -1716,6 +1744,39 @@ const CodessaMemoryHarvester = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
+      {/* Error Notifications */}
+      {errors.length > 0 && (
+        <div className="mb-6 space-y-2">
+          {errors.map(error => (
+            <div key={error.id} className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-red-800 font-medium">
+                    {error.context ? `${error.context}: ` : ''}{error.message}
+                  </p>
+                  <p className="text-red-600 text-sm mt-1">
+                    {new Date(error.timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setErrors(prev => prev.filter(e => e.id !== error.id))}
+                className="text-red-400 hover:text-red-600 p-1"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={clearErrors}
+            className="text-sm text-red-600 hover:text-red-800 underline"
+          >
+            Clear all errors
+          </button>
+        </div>
+      )}
+      
       <div className="mb-8">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
           Codessa Memory Harvesting System v2.0
@@ -2003,4 +2064,11 @@ const CodessaMemoryHarvester = () => {
   );
 };
 
-export default CodessaMemoryHarvester;
+// Wrapped component with error boundary
+const CodessaMemoryHarvesterWithErrorBoundary = () => (
+  <CodessaErrorBoundary>
+    <CodessaMemoryHarvester />
+  </CodessaErrorBoundary>
+);
+
+export default CodessaMemoryHarvesterWithErrorBoundary;
