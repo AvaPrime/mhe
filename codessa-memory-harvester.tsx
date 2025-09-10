@@ -5,6 +5,8 @@ import SearchPanel from './components/SearchPanel';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import APIConnectionsPanel from './components/APIConnectionsPanel';
 import ContentManagementPanel from './components/ContentManagementPanel';
+import { useAnnouncer, useKeyboardNavigation, useAccessibilityPreferences, KeyCodes, createAriaAttributes, generateId } from './utils/accessibility';
+import { usePerformanceMonitor } from './utils/performance';
 
 // Error Boundary Component
 class CodessaErrorBoundary extends React.Component {
@@ -107,6 +109,16 @@ const CodessaMemoryHarvester = () => {
       setIsLoading(false);
     }
   }, [addError]);
+
+  // Accessibility and Performance hooks
+  const { announce } = useAnnouncer();
+  const { preferences } = useAccessibilityPreferences();
+  const { measureRender, getMetrics, analyze, logReport } = usePerformanceMonitor();
+  
+  // Generate unique IDs for accessibility
+  const mainContentId = useMemo(() => generateId('main-content'), []);
+  const navigationId = useMemo(() => generateId('navigation'), []);
+  const statusId = useMemo(() => generateId('status'), []);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -449,6 +461,90 @@ const CodessaMemoryHarvester = () => {
       alert(`Failed to export as ${format.toUpperCase()}. Please try again.`);
     }
   }, [searchResults, downloadFile]);
+
+  // Keyboard navigation and accessibility handlers
+  const handleKeyDown = useCallback((event) => {
+    const { key, ctrlKey, altKey, shiftKey } = event;
+    
+    // Global keyboard shortcuts
+    if (ctrlKey) {
+      switch (key) {
+        case 'k': // Ctrl+K for search
+          event.preventDefault();
+          announce('Search activated');
+          // Focus search input if available
+          const searchInput = document.querySelector('[data-search-input]');
+          if (searchInput) searchInput.focus();
+          break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+          event.preventDefault();
+          const tabIndex = parseInt(key) - 1;
+          const tabs = ['harvest', 'projects', 'agents', 'knowledge', 'analytics', 'search'];
+          if (tabs[tabIndex]) {
+            setActiveTab(tabs[tabIndex]);
+            announce(`Switched to ${tabs[tabIndex]} tab`);
+          }
+          break;
+      }
+    }
+    
+    // Alt key shortcuts
+    if (altKey) {
+      switch (key) {
+        case 'h': // Alt+H for help
+          event.preventDefault();
+          announce('Help information available');
+          break;
+        case 'r': // Alt+R for refresh
+          event.preventDefault();
+          announce('Refreshing data');
+          window.location.reload();
+          break;
+      }
+    }
+  }, [announce, setActiveTab]);
+
+  // Accessibility announcements for state changes
+  useEffect(() => {
+    if (isLoading) {
+      announce('Loading content, please wait');
+    }
+  }, [isLoading, announce]);
+
+  useEffect(() => {
+    if (errors.length > 0) {
+      announce(`Error occurred: ${errors[0].message}`);
+    }
+  }, [errors, announce]);
+
+  useEffect(() => {
+    announce(`Switched to ${activeTab} section`);
+  }, [activeTab, announce]);
+
+  // Performance monitoring
+  useEffect(() => {
+    measureRender('CodessaMemoryHarvester');
+    
+    // Log performance metrics periodically
+    const interval = setInterval(() => {
+      const metrics = getMetrics();
+      const analysis = analyze();
+      logReport('performance-check', { metrics, analysis });
+    }, 30000); // Every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [measureRender, getMetrics, analyze, logReport]);
+
+  // Add global keyboard event listener
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const renderEnhancedHarvesting = () => (
     <div className="space-y-6">

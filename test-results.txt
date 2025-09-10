@@ -1,0 +1,35 @@
+[1m[34mCodessa Memory Harvester - Test Suite[0m
+[34m======================================[0m
+
+[1m[34mRunning Basic Component Structure Tests[0m
+
+
+[34m[1mComponent Files Existence[0m
+  [32mΓ£ô[0m should have components/SearchPanel.tsx
+  [32mΓ£ô[0m should have components/AnalyticsDashboard.tsx
+  [32mΓ£ô[0m should have components/APIConnectionsPanel.tsx
+  [32mΓ£ô[0m should have components/ContentManagementPanel.tsx
+
+[34m[1mTest Files Existence[0m
+  [32mΓ£ô[0m should have components/__tests__/SearchPanel.test.tsx
+  [32mΓ£ô[0m should have components/__tests__/AnalyticsDashboard.test.tsx
+  [32mΓ£ô[0m should have components/__tests__/APIConnectionsPanel.test.tsx
+  [32mΓ£ô[0m should have components/__tests__/ContentManagementPanel.test.tsx
+  [32mΓ£ô[0m should have __tests__/CodessaMemoryHarvester.integration.test.tsx
+
+[34m[1mConfiguration Files[0m
+  [32mΓ£ô[0m should have jest.config.js
+  [32mΓ£ô[0m should have src/setupTests.js
+  [32mΓ£ô[0m should have types/index.ts
+
+[34m[1mTypeScript Interfaces[0m
+  [32mΓ£ô[0m should have proper TypeScript interfaces defined
+
+[1mTest Results Summary:[0m
+[32mPassed: 13[0m
+[31mFailed: 0[0m
+[33mSkipped: 0[0m
+Total: 13
+Success Rate: 100.0%
+
+[32m[1mAll tests passed! Γ£¿[0m
