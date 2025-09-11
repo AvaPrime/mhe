@@ -1,0 +1,266 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force a release even if no changes detected'
+        required: false
+        default: false
+        type: boolean
+
+# Prevent concurrent releases
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+  id-token: write  # For OIDC token generation
+  packages: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+      upload_url: ${{ steps.release.outputs.upload_url }}
+      sha: ${{ steps.release.outputs.sha }}
+      pr_number: ${{ steps.release.outputs.pr_number }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Please
+        id: release
+        uses: google-github-actions/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
+          command: manifest
+
+      - name: Show Release Outputs
+        if: always()
+        run: |
+          echo "Release created: ${{ steps.release.outputs.release_created }}"
+          echo "Tag name: ${{ steps.release.outputs.tag_name }}"
+          echo "Version: ${{ steps.release.outputs.version }}"
+          echo "Upload URL: ${{ steps.release.outputs.upload_url }}"
+          echo "SHA: ${{ steps.release.outputs.sha }}"
+          echo "PR created: ${{ steps.release.outputs.prs_created }}"
+          
+          # Repository settings
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Release settings
+          release-type: python
+          package-name: memory-harvester-engine
+          
+          # Changelog and versioning
+          bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: true
+          
+          # PR settings
+          draft-pull-request: false
+          pull-request-title-pattern: "chore: release v${version}"
+
+  # Publish to PyPI
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    environment:
+      name: pypi
+      url: https://pypi.org/p/mhe
+    permissions:
+      id-token: write  # For trusted publishing
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip build twine check-manifest
+
+      - name: Verify package manifest
+        run: |
+          check-manifest --verbose
+
+      - name: Build package
+        run: |
+          python -m build --sdist --wheel
+          ls -la dist/
+
+      - name: Verify package integrity
+        run: |
+          twine check dist/*
+          python -m pip install dist/*.whl
+          python -c "import mhe; print(f'Successfully imported mhe version: {mhe.__version__}')"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://upload.pypi.org/legacy/
+          verbose: true
+          print-hash: true
+          skip-existing: false
+          verify-metadata: true
+
+  # Publish to Test PyPI (for testing)
+  publish-test-pypi:
+    name: Publish to Test PyPI
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/mhe
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip build twine
+
+      - name: Build package
+        run: |
+          python -m build --sdist --wheel
+
+      - name: Verify package
+        run: |
+          twine check dist/*
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
+          skip-existing: true
+          verify-metadata: true
+
+  # Build and push Docker images
+  docker:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    environment:
+      name: docker
+      url: https://hub.docker.com/r/${{ vars.DOCKER_USERNAME }}/mhe
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:buildx-stable-1
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ vars.DOCKER_USERNAME }}/mhe
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},value=${{ needs.release-please.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release-please.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.release-please.outputs.version }},enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=Memory Harvester Engine (MHE)
+            org.opencontainers.image.description=A comprehensive data processing and memory management engine
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+            org.opencontainers.image.version=${{ needs.release-please.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.release-please.outputs.version }}
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ github.sha }}
+          provenance: true
+          sbom: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ vars.DOCKER_USERNAME }}/mhe:${{ needs.release-please.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
