@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Codessa-Seed Cluster Index Schema", 
+  "description": "Schema for semantic cluster metadata and insights",
+  "type": "object",
+  "properties": {
+    "cluster_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique cluster identifier"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable cluster label"
+    },
+    "synopsis": {
+      "type": "string",
+      "description": "Brief summary of cluster content and themes"
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Representative keywords for cluster"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Memory object IDs belonging to cluster"
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "recurrence_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of times this topic pattern has appeared"
+        },
+        "first_seen": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of first occurrence"
+        },
+        "last_seen": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of most recent occurrence"
+        }
+      },
+      "required": ["recurrence_count", "first_seen", "last_seen"],
+      "additionalProperties": false
+    },
+    "insights": {
+      "type": "object",
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Recurring patterns identified within cluster"
+        },
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Conflicting viewpoints or approaches within cluster"
+        },
+        "forks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Points where discussions branched into different directions"
+        },
+        "convergence_points": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Areas where multiple discussions converged on similar insights"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["cluster_id", "label", "members", "meta"],
+  "additionalProperties": false
+}

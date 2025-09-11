@@ -1,0 +1,161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Codessa-Seed Memory Object Schema",
+  "description": "Canonical schema for memory objects in the Codessa-Seed system",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique memory object identifier"
+    },
+    "thread_id": {
+      "type": "string",
+      "description": "Source conversation thread identifier"
+    },
+    "message_id": {
+      "type": "string",
+      "description": "Original message identifier from source"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Message timestamp in ISO-8601 format"
+    },
+    "author": {
+      "type": "string",
+      "enum": ["assistant"],
+      "description": "Message author (assistant-only in MVP)"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Original message content"
+    },
+    "tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Token count for content"
+    },
+    "facets": {
+      "type": "object",
+      "properties": {
+        "why": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Extracted intent and purpose behind the message"
+        },
+        "core_principles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Fundamental principles and beliefs expressed"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Demonstrated or discussed capabilities"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Identified limitations and boundaries"
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Potential risks and concerns identified"
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Identified opportunities and potentials"
+        },
+        "unresolved_loops": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Unfinished thoughts or open questions"
+        },
+        "integration_points": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Connections to other systems or concepts"
+        }
+      },
+      "required": ["why"],
+      "additionalProperties": false
+    },
+    "cluster_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Semantic cluster identifier"
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "source_file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Original export file path"
+        },
+        "thread_title": {
+          "type": "string",
+          "description": "Original conversation title"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA256 hash of source content for integrity"
+        }
+      },
+      "required": ["source_file", "hash"],
+      "additionalProperties": false
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of memory object schema"
+    }
+  },
+  "required": [
+    "id",
+    "thread_id", 
+    "message_id",
+    "timestamp",
+    "author",
+    "text",
+    "tokens",
+    "facets",
+    "cluster_id",
+    "provenance",
+    "version"
+  ],
+  "additionalProperties": false
+}

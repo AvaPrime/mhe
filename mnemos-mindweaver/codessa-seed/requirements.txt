@@ -1,0 +1,5 @@
+pytest
+hypothesis
+jsonschema
+numpy
+scikit-learn

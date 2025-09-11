@@ -1,0 +1,136 @@
+# CODEOWNERS for Memory Harvester Engine (MHE)
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - these users will be requested for review on all PRs
+* @Phoenix @maintainer2
+
+# === Core Library ===
+# Core MHE modules require careful review
+/mhe/ @Phoenix @maintainer2
+
+# Memory and storage systems - data safety critical
+/mhe/memory/ @Phoenix @data-owner
+/mhe/consolidation/ @Phoenix @data-owner
+
+# Security-sensitive capture and access modules
+/mhe/capture/ @Phoenix @security-owner
+/mhe/access/ @Phoenix @security-owner
+
+# === Infrastructure & Operations ===
+# Docker, Kubernetes, and deployment configs
+/infra/ @Phoenix @devops-owner
+/infra/docker/ @Phoenix @devops-owner
+/infra/k8s/ @Phoenix @devops-owner
+/infra/terraform/ @Phoenix @devops-owner
+
+# CI/CD pipelines and automation
+/.github/ @Phoenix @devops-owner
+/.github/workflows/ @Phoenix @devops-owner
+
+# === Security-Critical Files ===
+# Security configurations and sensitive files
+pyproject.toml @Phoenix @security-owner
+requirements*.txt @Phoenix @security-owner
+.env* @Phoenix @security-owner
+Dockerfile* @Phoenix @security-owner @devops-owner
+
+# Pre-commit and security tools
+.pre-commit-config.yaml @Phoenix @security-owner
+.secrets.baseline @Phoenix @security-owner
+
+# === CLI & User Interface ===
+# Command-line interface and user-facing features
+/cli/ @Phoenix @ux-owner
+
+# === Data Processing & Ingestion ===
+# Data ingestion and processing pipelines
+/ingestion/ @Phoenix @data-owner
+
+# Specific ingestion adapters (may have specialized owners)
+/ingestion/pdf/ @Phoenix @data-owner @pdf-specialist
+/ingestion/web/ @Phoenix @data-owner @web-specialist
+/ingestion/database/ @Phoenix @data-owner @db-specialist
+
+# === Testing & Quality Assurance ===
+# Test configurations and critical test files
+/tests/ @Phoenix @qa-owner
+pytest.ini @Phoenix @qa-owner
+conftest.py @Phoenix @qa-owner
+
+# Performance and load tests
+/tests/performance/ @Phoenix @performance-owner
+/tests/load/ @Phoenix @performance-owner
+
+# === Documentation ===
+# User-facing documentation
+/docs/ @Phoenix @docs-owner
+README.md @Phoenix @docs-owner
+CHANGELOG.md @Phoenix @docs-owner
+
+# Developer documentation and guides
+CONTRIBUTING.md @Phoenix @docs-owner
+AGENTS.md @Phoenix @docs-owner
+
+# API documentation
+/docs/api/ @Phoenix @docs-owner @api-owner
+
+# === Configuration & Tooling ===
+# Linting and code quality tools
+ruff.toml @Phoenix @qa-owner
+pyright.toml @Phoenix @qa-owner
+.ruff.toml @Phoenix @qa-owner
+
+# Development and build tools
+setup.py @Phoenix @build-owner
+setup.cfg @Phoenix @build-owner
+pyproject.toml @Phoenix @build-owner
+
+# === Scripts & Utilities ===
+# Administrative and development scripts
+/scripts/ @Phoenix @devops-owner
+/scripts/admin/ @Phoenix @devops-owner @admin-owner
+/scripts/deploy/ @Phoenix @devops-owner
+
+# === Branch Protection Overrides ===
+# These files require extra scrutiny and multiple approvals
+
+# Security-critical changes require security team approval
+**/*security* @Phoenix @security-owner
+**/*auth* @Phoenix @security-owner
+**/*token* @Phoenix @security-owner
+**/*credential* @Phoenix @security-owner
+
+# Database migration files require data team approval
+**/migrations/ @Phoenix @data-owner @db-specialist
+**/*migration* @Phoenix @data-owner @db-specialist
+
+# Performance-critical paths require performance review
+**/hot_path.py @Phoenix @performance-owner
+**/optimization/ @Phoenix @performance-owner
+
+# === Emergency Contacts ===
+# For urgent issues outside normal business hours
+# Phoenix (Lead): @Phoenix
+# Security Issues: @security-owner
+# Production Issues: @devops-owner
+# Data Issues: @data-owner
+
+# === Review Requirements ===
+# Minimum reviews required: 1 (configured in branch protection)
+# For security-sensitive files: 2 reviews required
+# For data/schema changes: 2 reviews required
+# For infrastructure changes: 1+ devops review required
+
+# === Special Cases ===
+# Auto-generated files (no review required, but notify maintainers)
+*.lock @Phoenix
+package-lock.json @Phoenix
+
+# Documentation-only changes (lighter review process)
+*.md @docs-owner
+/docs/**/*.md @docs-owner
+
+# Small configuration changes
+.gitignore @Phoenix
+.editorconfig @Phoenix
+.vscode/ @Phoenix

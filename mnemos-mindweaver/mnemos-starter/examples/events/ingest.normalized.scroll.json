@@ -1,0 +1,9 @@
+
+{
+  "type": "ingest.normalized.scroll",
+  "source": "filesystem",
+  "sha256": "abc123",
+  "ts": "2025-08-28T10:31:00Z",
+  "payload_uri": "s3://mnemos/raw/scrolls/example.json",
+  "actor": {"id":"ava","kind":"agent"}
+}

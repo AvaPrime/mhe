@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Codessa-Seed Thread Index Schema",
+  "description": "Schema for per-conversation thread metadata and outcomes",
+  "type": "object",
+  "properties": {
+    "thread_id": {
+      "type": "string",
+      "description": "Unique thread identifier"
+    },
+    "title": {
+      "type": "string",
+      "description": "Conversation title or subject"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Thread start timestamp"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Thread end timestamp"
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["user", "assistant"]
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "List of conversation participants"
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "messages_total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of messages in thread"
+        },
+        "assistant_messages": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of assistant messages"
+        },
+        "memory_objects": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of memory objects created from thread"
+        }
+      },
+      "required": ["messages_total", "assistant_messages", "memory_objects"],
+      "additionalProperties": false
+    },
+    "outcomes": {
+      "type": "object",
+      "properties": {
+        "key_decisions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Major decisions made during conversation"
+        },
+        "directives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Action items and directives from conversation"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "closed", "ongoing"],
+          "description": "Conversation completion status"
+        }
+      },
+      "additionalProperties": false
+    },
+    "links": {
+      "type": "object",
+      "properties": {
+        "related_threads": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "IDs of related conversation threads"
+        },
+        "cluster_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "uniqueItems": true,
+          "description": "Semantic cluster IDs associated with thread"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["thread_id", "title", "started_at", "participants", "stats"],
+  "additionalProperties": false
+}

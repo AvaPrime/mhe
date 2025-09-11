@@ -1,0 +1,71 @@
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports: ["5432:5432"]
+    volumes:
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+
+  nats:
+    image: nats:2.10
+    ports: ["4222:4222"]
+
+  temporal:
+    image: temporalio/auto-setup:1.25.0
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PWD=${POSTGRES_PASSWORD}
+      - POSTGRES_SEEDS=postgres
+    depends_on:
+      - postgres
+    ports: ["7233:7233"]
+
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:8000
+    ports: ["8080:8080"]
+    depends_on:
+      - temporal
+
+  ray-head:
+    image: rayproject/ray:latest
+    command: ray start --head --dashboard-host=0.0.0.0
+    ports: ["8265:8265", "10001:10001"]
+
+  api:
+    build:
+      context: ./services/api
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      TEMPORAL_HOST: ${TEMPORAL_HOST}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE}
+      NATS_URL: ${NATS_URL}
+    ports: ["8000:8000"]
+    depends_on:
+      - postgres
+      - ray-head
+      - temporal
+
+  worker:
+    build:
+      context: ./services/worker
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      TEMPORAL_HOST: ${TEMPORAL_HOST}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE}
+      NATS_URL: ${NATS_URL}
+      RAY_ADDRESS: ${RAY_ADDRESS}
+    depends_on:
+      - postgres
+      - ray-head
+      - temporal

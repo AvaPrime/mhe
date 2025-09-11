@@ -1,0 +1,320 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Codessa-Seed Memory Schemas",
+  "definitions": {
+    "memory_object": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique memory object identifier"
+        },
+        "thread_id": {
+          "type": "string",
+          "description": "Source conversation thread identifier"
+        },
+        "message_id": {
+          "type": "string",
+          "description": "Original message identifier"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Message timestamp in ISO-8601 format"
+        },
+        "author": {
+          "type": "string",
+          "enum": [
+            "assistant",
+            "user"
+          ],
+          "description": "Message author role"
+        },
+        "text": {
+          "type": "string",
+          "description": "Original message content"
+        },
+        "tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Token count for content"
+        },
+        "facets": {
+          "type": "object",
+          "properties": {
+            "why": {
+              "type": "string",
+              "description": "Extracted intent and purpose"
+            },
+            "core_principles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Underlying principles and beliefs"
+            },
+            "capabilities": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Demonstrated or discussed capabilities"
+            },
+            "constraints": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Identified limitations and boundaries"
+            },
+            "risks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Potential risks and concerns"
+            },
+            "opportunities": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Identified opportunities and potentials"
+            },
+            "unresolved_loops": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Unfinished thoughts or open questions"
+            },
+            "integration_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Connections to other systems or concepts"
+            }
+          },
+          "required": [
+            "why"
+          ]
+        },
+        "cluster_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Semantic cluster identifier"
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "source_file": {
+              "type": "string",
+              "description": "Original export file path"
+            },
+            "thread_title": {
+              "type": "string",
+              "description": "Original conversation title"
+            },
+            "hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$",
+              "description": "SHA256 hash of source content"
+            }
+          },
+          "required": [
+            "source_file",
+            "hash"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of memory object schema"
+        }
+      },
+      "required": [
+        "id",
+        "thread_id",
+        "message_id",
+        "timestamp",
+        "author",
+        "text",
+        "facets",
+        "provenance",
+        "version"
+      ]
+    },
+    "thread_index": {
+      "type": "object",
+      "properties": {
+        "thread_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "messages_total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "assistant_messages": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "memory_objects": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "outcomes": {
+          "type": "object",
+          "properties": {
+            "key_decisions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "directives": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed",
+                "ongoing"
+              ]
+            }
+          }
+        },
+        "links": {
+          "type": "object",
+          "properties": {
+            "related_threads": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cluster_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "thread_id",
+        "title",
+        "started_at",
+        "participants",
+        "stats"
+      ]
+    },
+    "cluster_index": {
+      "type": "object",
+      "properties": {
+        "cluster_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "label": {
+          "type": "string"
+        },
+        "synopsis": {
+          "type": "string"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "recurrence_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "first_seen": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "last_seen": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "insights": {
+          "type": "object",
+          "properties": {
+            "patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "contradictions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "forks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "convergence_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "cluster_id",
+        "label",
+        "members",
+        "meta"
+      ]
+    }
+  }
+}

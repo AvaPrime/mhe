@@ -1,0 +1,23 @@
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mnemos-worker"
+version = "0.1.0"
+description = "Mnemos workflows & tasks"
+requires-python = ">=3.12"
+dependencies = [
+  "temporalio>=1.7",
+  "ray>=2.9",
+  "pydantic>=2.8",
+  "sqlalchemy>=2.0",
+  "psycopg[binary]>=3.2",
+  "pgvector>=0.2.5",
+  "python-dotenv>=1.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
