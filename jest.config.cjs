@@ -11,12 +11,11 @@ module.exports = {
   // Transform files
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
-    '^.+\\.css$': 'identity-obj-proxy',
     '^.+\\.(png|jpg|jpeg|gif|svg)$': 'jest-transform-stub'
   },
   
   // Module name mapping
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
   },

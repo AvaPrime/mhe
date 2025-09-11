@@ -1,5 +1,5 @@
 // Jest setup file for React Testing Library
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
